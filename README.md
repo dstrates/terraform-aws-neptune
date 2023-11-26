@@ -27,11 +27,11 @@ Neptune serverless requires that the `engine_version` attribute must be `1.2.0.1
 # main.tf
 
 module "neptune" {
-  source = "../../modules/terraform-aws-neptune"
+  source = "./path/to/neptune-module"
 
   apply_immediately                      = true
   backup_retention_period                = 5
-  cluster_identifier                     = "neptune-${local.workspace.environment}-${local.workspace.short_region}"
+  cluster_identifier                     = "neptune-db-dev-use2"
   create_neptune_cluster                 = true
   create_neptune_cluster_parameter_group = true
   create_neptune_instance                = true
@@ -44,11 +44,7 @@ module "neptune" {
   min_capacity                           = 2.5
   preferred_backup_window                = "07:00-09:00"
   skip_final_snapshot                    = true
-  subnet_ids                             = ["${data.aws_subnet.db2a.id}", "${data.aws_subnet.db2b.id}"]
-  tags = {
-    Name        = "shared-neptune-db-${local.workspace.environment}-${local.workspace.short_region}"
-    Environment = "${local.workspace.environment}"
-  }
+  subnet_ids                             = data.aws_subnets.db.ids
 
   neptune_cluster_parameters = {
     parameter1 = {
@@ -59,7 +55,7 @@ module "neptune" {
 
   neptune_db_parameters = {
     parameter1 = {
-      key  = "neptune_query_timeout"
+      key   = "neptune_query_timeout"
       value = "25"
     }
   }
@@ -67,6 +63,11 @@ module "neptune" {
   event_subscriptions = {
     "subscription1" = "arn:aws:sns:us-east-1:123456789012:topic1"
     "subscription2" = "arn:aws:sns:us-east-1:123456789012:topic2"
+  }
+
+  tags = {
+    Name        = "neptune-db-dev-use2"
+    Environment = "dev"
   }
 }
 ```
