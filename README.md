@@ -27,7 +27,8 @@ Neptune serverless requires that the `engine_version` attribute must be `1.2.0.1
 # main.tf
 
 module "neptune" {
-  source = "./path/to/neptune-module"
+  source  = "dstrates/neptune/aws"
+  version = "0.0.1"
 
   apply_immediately                      = true
   backup_retention_period                = 5
@@ -76,14 +77,15 @@ module "neptune" {
 
 ```hcl
 module "neptune" {
-  source = "./path/to/neptune-module"
+  source  = "dstrates/neptune/aws"
+  version = "0.0.1"
 
   # Standard configuration
   # ...
   # ...
 
-  # Endpoint configuration
   create_neptune_cluster_endpoint     = true
+
   neptune_cluster_endpoints           = {
     "endpoint1" = {
       endpoint_type    = "READER"
