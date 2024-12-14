@@ -10,6 +10,12 @@ variable "apply_immediately" {
   default     = true
 }
 
+variable "availability_zones" {
+  description = "(Optional) A list of EC2 Availability Zones that instances in the Neptune cluster can be created in."
+  type        = list(string)
+  default     = null
+}
+
 variable "backup_retention_period" {
   description = "The number of days to retain backups for"
   type        = number
@@ -19,6 +25,18 @@ variable "backup_retention_period" {
 variable "cluster_identifier" {
   description = "The cluster identifier"
   type        = string
+}
+
+variable "cluster_identifier_prefix" {
+  description = "(Optional) Creates a unique cluster identifier beginning with the specified prefix. Conflicts with cluster_identifier."
+  type        = string
+  default     = null
+}
+
+variable "copy_tags_to_snapshot" {
+  description = "(Optional) If set to true, tags are copied to any snapshot of the DB cluster that is created."
+  type        = bool
+  default     = null
 }
 
 variable "create_neptune_cluster" {
@@ -51,8 +69,14 @@ variable "create_neptune_cluster_snapshot" {
   default     = true
 }
 
+variable "create_neptune_global_cluster" {
+  description = "Whether or not to create a Neptune global cluster"
+  type        = bool
+  default     = false
+}
+
 variable "create_neptune_iam_role" {
-  description = "Whether or not to create and attach Neptune IAM role"
+  description = "Whether or not to create and attach a Neptune IAM role"
   type        = bool
   default     = true
 }
@@ -84,11 +108,13 @@ variable "create_timeout" {
 variable "db_cluster_identifier" {
   description = "The DB Cluster Identifier from which to take the snapshot"
   type        = string
+  default     = null
 }
 
 variable "db_cluster_snapshot_identifier" {
   description = "The Identifier for the snapshot"
   type        = string
+  default     = null
 }
 
 variable "deletion_protection" {
@@ -109,6 +135,12 @@ variable "enable_serverless" {
   default     = true
 }
 
+variable "engine_version" {
+  description = "The database engine version"
+  type        = string
+  default     = "1.2.0.1"
+}
+
 variable "event_subscriptions" {
   description = <<-EOT
     Map of Neptune event subscriptions with names and SNS topic ARNs
@@ -117,12 +149,55 @@ variable "event_subscriptions" {
     {
       "subscription1" = "arn:aws:sns:us-east-1:123456789012:topic1",
       "subscription2" = "arn:aws:sns:us-east-1:123456789012:topic2"
-      # Add more subscriptions as needed
     }
   EOT
   type        = map(string)
   default     = null
 }
+
+variable "final_snapshot_identifier" {
+  description = "(Optional) The name of your final Neptune snapshot when this Neptune cluster is deleted. If omitted, no final snapshot will be made."
+  type        = string
+  default     = null
+}
+
+
+variable "global_cluster_engine" {
+  description = "(Optional) Name of the database engine to be used for the global cluster. Valid values: neptune."
+  type        = string
+  default     = null
+}
+
+variable "global_cluster_engine_version" {
+  description = "(Optional) Engine version of the global database. Must be compatible with Neptune global cluster versions."
+  type        = string
+  default     = null
+}
+
+variable "global_cluster_identifier" {
+  description = "(Optional) The global cluster identifier specified on aws_neptune_global_cluster."
+  type        = string
+  default     = null
+}
+
+variable "global_cluster_source_db_cluster_identifier" {
+  description = "(Optional) ARN of a Neptune DB Cluster to use as the primary DB cluster of the global cluster."
+  type        = string
+  default     = null
+}
+
+variable "global_cluster_deletion_protection" {
+  description = "(Optional) Whether or not the global cluster should have deletion protection enabled. Default: false."
+  type        = bool
+  default     = false
+}
+
+variable "global_cluster_storage_encrypted" {
+  description = "(Optional) Specifies whether the global cluster is encrypted. The default is false unless the source DB cluster is encrypted."
+  type        = bool
+  default     = null
+}
+
 
 variable "iam_database_authentication_enabled" {
   description = "Specifies whether IAM database authentication is enabled"
@@ -136,10 +211,10 @@ variable "iam_roles" {
   default     = null
 }
 
-variable "engine_version" {
-  description = "The database engine version"
+variable "instance_class" {
+  description = "The instance class to use for the Neptune instances (e.g., db.r5.large, db.serverless)."
   type        = string
-  default     = "1.2.0.1"
+  default     = "db.serverless"
 }
 
 variable "kms_key_arn" {
@@ -188,7 +263,6 @@ variable "neptune_cluster_parameters" {
       key   = "neptune_enable_audit_log"
       value = "1"
     }
-    # Add more parameters as needed
   }
 }
 
@@ -278,16 +352,52 @@ variable "preferred_backup_window" {
   default     = "07:00-09:00"
 }
 
+variable "preferred_maintenance_window" {
+  description = "(Optional) The weekly time range during which system maintenance can occur, in UTC, e.g., 'wed:04:00-wed:04:30'."
+  type        = string
+  default     = null
+}
+
+variable "port" {
+  description = "(Optional) The port on which the Neptune accepts connections."
+  type        = number
+  default     = 8182
+}
+
+variable "read_replica_count" {
+  description = "Number of read replicas to create."
+  type        = number
+  default     = 0
+}
+
+variable "replication_source_identifier" {
+  description = "(Optional) ARN of a source Neptune cluster or Neptune instance if this Neptune cluster is to be created as a Read Replica."
+  type        = string
+  default     = null
+}
+
 variable "skip_final_snapshot" {
   description = "Determines whether a final Neptune snapshot is created before deletion"
   type        = bool
   default     = true
 }
 
+variable "snapshot_identifier" {
+  description = "(Optional) Specifies whether or not to create this cluster from a snapshot."
+  type        = string
+  default     = null
+}
+
 variable "storage_encrypted" {
-  description = "(Optional) Specifies whether the Neptune cluster is encrypted. The default is false if not specified."
+  description = "(Optional) Specifies whether the Neptune cluster is encrypted."
   type        = bool
   default     = true
+}
+
+variable "storage_type" {
+  description = "(Optional) Storage type associated with the cluster (standard or iopt1). Default: standard"
+  type        = string
+  default     = "standard"
 }
 
 variable "subnet_ids" {
@@ -299,7 +409,7 @@ variable "subnet_ids" {
 variable "tags" {
   description = "A map of tags to assign to the Neptune cluster"
   type        = map(string)
-  default     = null
+  default     = {}
 }
 
 variable "vpc_id" {

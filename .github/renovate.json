@@ -1,8 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base"],
+  "extends": [
+    "config:base"
+  ],
   "timezone": "Australia/Sydney",
-  "schedule": ["before 9am on monday"],
+  "schedule": [
+    "before 9am on monday"
+  ],
   "docker": {
     "pinDigests": true
   },
@@ -10,15 +14,32 @@
   "automergeStrategy": "squash",
   "automergeType": "pr",
   "automerge": false,
-  "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"],
-  "labels": ["patch"],
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodUpdateImportPaths"
+  ],
+  "labels": [
+    "patch"
+  ],
   "packageRules": [
     {
       "groupName": "Dependencies",
       "groupSlug": "dependencies",
-      "labels": ["patch"],
-      "matchUpdateTypes": ["major", "minor", "patch", "digest", "pin", "pinDigest", "lockFileMaintenance"],
-      "matchPackagePatterns": ["*"]
+      "labels": [
+        "patch"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor",
+        "patch",
+        "digest",
+        "pin",
+        "pinDigest",
+        "lockFileMaintenance"
+      ],
+      "matchPackagePatterns": [
+        "*"
+      ]
     }
   ]
 }

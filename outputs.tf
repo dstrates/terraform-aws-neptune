@@ -3,6 +3,26 @@ output "neptune_cluster_id" {
   value       = try(aws_neptune_cluster.this[0].id, null)
 }
 
+output "neptune_cluster_arn" {
+  description = "ARN of the Neptune cluster"
+  value       = try(aws_neptune_cluster.this[0].arn, null)
+}
+
+output "neptune_cluster_endpoint" {
+  description = "The endpoint of the Neptune cluster"
+  value       = try(aws_neptune_cluster.this[0].endpoint, null)
+}
+
+output "neptune_cluster_reader_endpoint" {
+  description = "The reader endpoint of the Neptune cluster"
+  value       = try(aws_neptune_cluster.this[0].reader_endpoint, null)
+}
+
+output "neptune_cluster_resource_id" {
+  description = "The resource ID of the Neptune cluster"
+  value       = try(aws_neptune_cluster.this[0].cluster_resource_id, null)
+}
+
 output "neptune_cluster_snapshot_arn" {
   description = "The Amazon Resource Name (ARN) for the DB Cluster Snapshot"
   value       = try(aws_neptune_cluster_snapshot.this[0].arn, null)
@@ -46,4 +66,24 @@ output "neptune_cluster_endpoint_ids" {
 output "neptune_security_group_id" {
   description = "ID of the Neptune security group"
   value       = try(aws_security_group.this[0].id, null)
+}
+
+output "neptune_global_cluster_id" {
+  description = "ID of the Neptune global cluster"
+  value       = try(aws_neptune_global_cluster.this[0].id, null)
+}
+
+output "neptune_global_cluster_arn" {
+  description = "ARN of the Neptune global cluster"
+  value       = try(aws_neptune_global_cluster.this[0].arn, null)
+}
+
+output "neptune_global_cluster_resource_id" {
+  description = "AWS Region-unique, immutable identifier for the global database cluster"
+  value       = try(aws_neptune_global_cluster.this[0].global_cluster_resource_id, null)
+}
+
+output "neptune_global_cluster_members" {
+  description = "A set of objects containing global cluster members"
+  value       = try(aws_neptune_global_cluster.this[0].global_cluster_members, [])
 }
