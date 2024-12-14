@@ -28,7 +28,7 @@ jobs:
       - name: Set up Auto
         uses: auto-it/setup-auto@v1
         with:
-          gh-token: ${{ secrets.GH_TOKEN }}
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release
         run: auto shipit
