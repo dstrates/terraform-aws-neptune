@@ -27,7 +27,7 @@ resource "aws_neptune_cluster" "this" {
   neptune_subnet_group_name            = try(aws_neptune_subnet_group.this[0].name, null)
   kms_key_arn                          = try(var.kms_key_arn, null)
   iam_database_authentication_enabled  = var.iam_database_authentication_enabled
-  iam_roles                            = try([module.iam_role_neptune.iam_role_arn], var.iam_roles)
+  iam_roles                            = try([aws_iam_role.this[0].arn], var.iam_roles)
   availability_zones                   = try(var.availability_zones, null)
   copy_tags_to_snapshot                = try(var.copy_tags_to_snapshot, null)
   final_snapshot_identifier            = try(var.final_snapshot_identifier, null)
