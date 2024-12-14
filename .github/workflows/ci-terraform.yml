@@ -3,12 +3,12 @@ run-name: Terraform CI by @${{ github.actor }} ${{ github.sha }}
 
 on:
   workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
   push:
     branches:
       - main
     paths:
-      - ".github/workflows/ci-terraform.yml"
-      - "**.tf"
       - "!examples/**"
 
 concurrency:
