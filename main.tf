@@ -9,24 +9,38 @@ data "aws_caller_identity" "current" {}
 resource "aws_neptune_cluster" "this" {
   count = var.create_neptune_cluster ? 1 : 0
 
-  allow_major_version_upgrade          = var.allow_major_version_upgrade
-  apply_immediately                    = var.apply_immediately
-  backup_retention_period              = var.backup_retention_period
-  cluster_identifier                   = var.cluster_identifier
-  deletion_protection                  = var.deletion_protection
-  enable_cloudwatch_logs_exports       = try(var.enable_cloudwatch_logs_exports, null)
-  engine                               = "neptune"
-  engine_version                       = var.engine_version
-  iam_database_authentication_enabled  = var.iam_database_authentication_enabled
-  iam_roles                            = try([module.iam_role_neptune.iam_role_arn], var.iam_roles)
-  kms_key_arn                          = try(var.kms_key_arn, null)
+  # Core configuration
+  cluster_identifier          = try(var.cluster_identifier, null)
+  cluster_identifier_prefix   = try(var.cluster_identifier_prefix, null)
+  engine                      = "neptune"
+  engine_version              = var.engine_version
+  port                        = try(var.port, 8182)
+  storage_encrypted           = var.storage_encrypted
+  storage_type                = try(var.storage_type, "standard")
+  deletion_protection         = var.deletion_protection
+  apply_immediately           = var.apply_immediately
+  allow_major_version_upgrade = var.allow_major_version_upgrade
+  backup_retention_period     = var.backup_retention_period
+
+  # Optional references
   neptune_cluster_parameter_group_name = try(aws_neptune_cluster_parameter_group.this[0].name, null)
   neptune_subnet_group_name            = try(aws_neptune_subnet_group.this[0].name, null)
+  kms_key_arn                          = try(var.kms_key_arn, null)
+  iam_database_authentication_enabled  = var.iam_database_authentication_enabled
+  iam_roles                            = try([module.iam_role_neptune.iam_role_arn], var.iam_roles)
+  availability_zones                   = try(var.availability_zones, null)
+  copy_tags_to_snapshot                = try(var.copy_tags_to_snapshot, null)
+  final_snapshot_identifier            = try(var.final_snapshot_identifier, null)
+  global_cluster_identifier            = try(var.global_cluster_identifier, null)
+  replication_source_identifier        = try(var.replication_source_identifier, null)
+  snapshot_identifier                  = try(var.snapshot_identifier, null)
   preferred_backup_window              = var.preferred_backup_window
-  skip_final_snapshot                  = var.skip_final_snapshot
-  storage_encrypted                    = var.storage_encrypted
-  vpc_security_group_ids               = try([aws_security_group.this[0].id], var.vpc_security_group_ids)
+  preferred_maintenance_window         = try(var.preferred_maintenance_window, null)
 
+  # CloudWatch logs
+  enable_cloudwatch_logs_exports = try(var.enable_cloudwatch_logs_exports, null)
+
+  # Serverless configuration
   dynamic "serverless_v2_scaling_configuration" {
     for_each = var.enable_serverless ? [1] : []
     content {
@@ -35,23 +49,61 @@ resource "aws_neptune_cluster" "this" {
     }
   }
 
+  # Skipping final snapshot if needed
+  skip_final_snapshot = var.skip_final_snapshot
+
+  # Security groups
+  vpc_security_group_ids = try([aws_security_group.this[0].id], var.vpc_security_group_ids)
+
   tags = var.tags
 }
 
 ######################
-# Cluster instance
+# Neptune Global Cluster
 ######################
 
-resource "aws_neptune_cluster_instance" "this" {
+resource "aws_neptune_global_cluster" "this" {
+  count = var.create_neptune_global_cluster ? 1 : 0
+
+  global_cluster_identifier    = var.global_cluster_identifier
+  engine                       = try(var.global_cluster_engine, null)
+  engine_version               = try(var.global_cluster_engine_version, null)
+  deletion_protection          = var.global_cluster_deletion_protection
+  source_db_cluster_identifier = try(var.global_cluster_source_db_cluster_identifier, null)
+  storage_encrypted            = try(var.global_cluster_storage_encrypted, null)
+}
+
+
+######################
+# Primary Cluster instance
+######################
+
+resource "aws_neptune_cluster_instance" "primary" {
   count = var.create_neptune_instance ? 1 : 0
 
   cluster_identifier           = aws_neptune_cluster.this[0].cluster_identifier
-  instance_class               = "db.serverless"
-  neptune_parameter_group_name = aws_neptune_parameter_group.this[0].name
-  neptune_subnet_group_name    = aws_neptune_subnet_group.this[0].name
+  instance_class               = var.instance_class
+  neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
+  neptune_subnet_group_name    = try(aws_neptune_subnet_group.this[0].name, null)
 
   tags = merge(var.tags, var.neptune_cluster_instance_tags)
 }
+
+######################
+# Read Replica Instances
+######################
+
+resource "aws_neptune_cluster_instance" "read_replicas" {
+  count = var.read_replica_count
+
+  cluster_identifier           = aws_neptune_cluster.this[0].cluster_identifier
+  instance_class               = var.instance_class
+  neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
+  neptune_subnet_group_name    = try(aws_neptune_subnet_group.this[0].name, null)
+
+  tags = merge(var.tags, var.neptune_cluster_instance_tags)
+}
+
 
 ######################
 # Cluster snapshot
@@ -60,7 +112,7 @@ resource "aws_neptune_cluster_instance" "this" {
 resource "aws_neptune_cluster_snapshot" "this" {
   count = var.create_neptune_cluster_snapshot ? 1 : 0
 
-  db_cluster_identifier          = try(aws_neptune_cluster.this.id, var.db_cluster_identifier)
+  db_cluster_identifier          = try(aws_neptune_cluster.this[0].id, var.db_cluster_identifier)
   db_cluster_snapshot_identifier = var.db_cluster_snapshot_identifier
 
   dynamic "timeouts" {
@@ -135,7 +187,7 @@ resource "aws_neptune_event_subscription" "this" {
   name          = each.key
   sns_topic_arn = each.value
   source_type   = var.event_subscriptions != null ? "db-instance" : null
-  source_ids    = var.create_neptune_instance ? [aws_neptune_cluster_instance.this[0].id] : []
+  source_ids    = var.create_neptune_instance ? [aws_neptune_cluster_instance.primary[0].id] : []
 
   tags = merge(var.tags, var.neptune_event_subscription_tags)
 }
@@ -167,7 +219,6 @@ resource "aws_security_group" "this" {
   description = "Neptune security group"
   vpc_id      = var.vpc_id
 
-  # INGRESS
   ingress {
     description = "Inbound Neptune Traffic"
     from_port   = var.neptune_port
@@ -175,7 +226,7 @@ resource "aws_security_group" "this" {
     protocol    = "tcp"
     cidr_blocks = var.neptune_subnet_cidrs
   }
-  # EGRESS
+
   egress {
     description = "Outbound Neptune Traffic"
     from_port   = var.neptune_port
@@ -210,7 +261,7 @@ resource "aws_iam_role" "this" {
   count = var.create_neptune_iam_role ? 1 : 0
 
   name                 = var.neptune_role_name
-  assume_role_policy   = data.aws_iam_policy_document.neptune[0].json
+  assume_role_policy   = data.aws_iam_policy_document.this[0].json
   description          = var.neptune_role_description
   permissions_boundary = var.neptune_role_permissions_boundary
 
@@ -225,6 +276,6 @@ resource "aws_iam_role" "this" {
 resource "aws_iam_role_policy_attachment" "this" {
   count = var.create_neptune_iam_role ? 1 : 0
 
-  role       = aws_iam_role.neptune_role[0].name
+  role       = aws_iam_role.this[0].name
   policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/ROSAKMSProviderPolicy"
 }
