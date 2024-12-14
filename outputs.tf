@@ -23,9 +23,9 @@ output "neptune_cluster_resource_id" {
   value       = try(aws_neptune_cluster.this[0].cluster_resource_id, null)
 }
 
-output "neptune_cluster_snapshot_arn" {
-  description = "The Amazon Resource Name (ARN) for the DB Cluster Snapshot"
-  value       = try(aws_neptune_cluster_snapshot.this[0].arn, null)
+output "neptune_cluster_snapshot_identifier" {
+  description = "The Identifier for the DB Cluster Snapshot"
+  value       = try(aws_neptune_cluster_snapshot.this[0].db_cluster_snapshot_identifier, null)
 }
 
 output "neptune_iam_role_arn" {
@@ -33,9 +33,14 @@ output "neptune_iam_role_arn" {
   value       = try(aws_iam_role.this[0].arn, null)
 }
 
-output "neptune_instance_id" {
-  description = "ID of the Neptune cluster instance"
-  value       = try(aws_neptune_cluster_instance.this[0].id, null)
+output "neptune_primary_instance_id" {
+  description = "ID of the primary Neptune cluster instance"
+  value       = try(aws_neptune_cluster_instance.primary[0].id, null)
+}
+
+output "neptune_read_replica_ids" {
+  description = "IDs of the Neptune read replica instances"
+  value       = try(aws_neptune_cluster_instance.read_replicas[*].id, [])
 }
 
 output "neptune_parameter_group_id" {
