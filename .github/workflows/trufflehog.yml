@@ -1,0 +1,20 @@
+name: Secrets Detection
+run-name: Secrets Detection ${{ github.sha }} by @${{ github.actor }}
+
+on:
+  merge_group:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
+      - name: Secret Scanning
+        uses: trufflesecurity/trufflehog@7e78ca385fb82c19568c7a4b341c97d57d9aa5e1 # v3.82.2
+        with:
+          extra_args: --only-verified
