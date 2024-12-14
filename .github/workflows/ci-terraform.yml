@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   terraform-ci:
+    name: Terraform CI
     permissions:
       pull-requests: write
     runs-on: ubuntu-latest
