@@ -4,14 +4,12 @@ Terraform module that creates AWS Neptune resources.
 
 ## Features
 
-- Create and manage AWS Neptune clusters and instances.
-- Supports Neptune Serverless & Neptune Global Clusters.
-- Configure Neptune cluster parameters dynamically.
+- Create and manage AWS Neptune clusters, instances & snapshots.
 - Create and manage Neptune cluster parameter groups.
 - Define Neptune subnet groups for cluster deployment.
 - Set up Neptune event subscriptions for monitoring.
 - Create custom cluster endpoints with various configurations.
-- Create read-only replicas in secondary regions.
+- Create Global clusters and read-only replicas in secondary regions.
 
 ## Usage
 
@@ -112,10 +110,10 @@ module "neptune" {
 
 ## Examples
 
-- [Neptune Cluster Complete](examples/complete/main.tf)
-- [Neptune Global Cluster (New)](examples/global-cluster-new/main.tf)
-- [Neptune Global Cluster (Existing DB cluster)](examples/global-cluster-existing/main.tf)
-- [Neptune Cluster Read-Replicas](examples/read-replica/main.tf)
+- [Neptune Cluster Complete](https://github.com/dstrates/terraform-aws-neptune/blob/main/examples/complete/main.tf)
+- [Neptune Global Cluster (New)](https://github.com/dstrates/terraform-aws-neptune/blob/main/examples/global-cluster-new/main.tf)
+- [Neptune Global Cluster (Existing DB cluster)](https://github.com/dstrates/terraform-aws-neptune/blob/main/examples/global-cluster-existing/main.tf)
+- [Neptune Cluster Read-Replicas](https://github.com/dstrates/terraform-aws-neptune/blob/main/examples/read-replica/main.tf)
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements

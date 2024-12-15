@@ -1,0 +1,5 @@
+# Disable some built-in rules
+config:
+  no-duplicate-heading: false # MD024
+  line-length: false # MD013
+  no-inline-html: false # MD033
