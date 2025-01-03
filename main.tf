@@ -15,18 +15,18 @@ resource "aws_neptune_cluster" "this" {
   engine                      = "neptune"
   engine_version              = var.engine_version
   port                        = try(var.port, 8182)
-  storage_encrypted           = var.storage_encrypted
+  storage_encrypted           = try(var.storage_encrypted, null)
   storage_type                = try(var.storage_type, "standard")
-  deletion_protection         = var.deletion_protection
-  apply_immediately           = var.apply_immediately
-  allow_major_version_upgrade = var.allow_major_version_upgrade
-  backup_retention_period     = var.backup_retention_period
+  deletion_protection         = try(var.deletion_protection, null)
+  apply_immediately           = try(var.apply_immediately, null)
+  allow_major_version_upgrade = try(var.allow_major_version_upgrade, null)
+  backup_retention_period     = try(var.backup_retention_period, null)
 
   # Optional references
   neptune_cluster_parameter_group_name = try(aws_neptune_cluster_parameter_group.this[0].name, null)
   neptune_subnet_group_name            = try(aws_neptune_subnet_group.this[0].name, null)
   kms_key_arn                          = try(var.kms_key_arn, null)
-  iam_database_authentication_enabled  = var.iam_database_authentication_enabled
+  iam_database_authentication_enabled  = try(var.iam_database_authentication_enabled, null)
   iam_roles                            = try([aws_iam_role.this[0].arn], var.iam_roles)
   availability_zones                   = try(var.availability_zones, null)
   copy_tags_to_snapshot                = try(var.copy_tags_to_snapshot, null)
@@ -34,7 +34,7 @@ resource "aws_neptune_cluster" "this" {
   global_cluster_identifier            = try(var.global_cluster_identifier, null)
   replication_source_identifier        = try(var.replication_source_identifier, null)
   snapshot_identifier                  = try(var.snapshot_identifier, null)
-  preferred_backup_window              = var.preferred_backup_window
+  preferred_backup_window              = try(var.preferred_backup_window, null)
   preferred_maintenance_window         = try(var.preferred_maintenance_window, null)
 
   # CloudWatch logs
@@ -50,12 +50,12 @@ resource "aws_neptune_cluster" "this" {
   }
 
   # Skipping final snapshot if needed
-  skip_final_snapshot = var.skip_final_snapshot
+  skip_final_snapshot = try(var.skip_final_snapshot, null)
 
   # Security groups
   vpc_security_group_ids = try([aws_security_group.this[0].id], var.vpc_security_group_ids)
 
-  tags = var.tags
+  tags = try(var.tags, null)
 }
 
 ######################
@@ -68,7 +68,7 @@ resource "aws_neptune_global_cluster" "this" {
   global_cluster_identifier    = var.global_cluster_identifier
   engine                       = try(var.global_cluster_engine, null)
   engine_version               = try(var.global_cluster_engine_version, null)
-  deletion_protection          = var.global_cluster_deletion_protection
+  deletion_protection          = try(var.global_cluster_deletion_protection, null)
   source_db_cluster_identifier = try(var.global_cluster_source_db_cluster_identifier, null)
   storage_encrypted            = try(var.global_cluster_storage_encrypted, null)
 }
@@ -86,7 +86,10 @@ resource "aws_neptune_cluster_instance" "primary" {
   neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
   neptune_subnet_group_name    = try(aws_neptune_subnet_group.this[0].name, null)
 
-  tags = merge(var.tags, var.neptune_cluster_instance_tags)
+  tags = merge(
+    try(var.tags, {}),
+    try(var.neptune_cluster_instance_tags, {})
+  )
 }
 
 ######################
@@ -101,7 +104,10 @@ resource "aws_neptune_cluster_instance" "read_replicas" {
   neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
   neptune_subnet_group_name    = try(aws_neptune_subnet_group.this[0].name, null)
 
-  tags = merge(var.tags, var.neptune_cluster_instance_tags)
+  tags = merge(
+    try(var.tags, {}),
+    try(var.neptune_cluster_instance_tags, {})
+  )
 }
 
 
@@ -113,7 +119,7 @@ resource "aws_neptune_cluster_snapshot" "this" {
   count = var.create_neptune_cluster_snapshot ? 1 : 0
 
   db_cluster_identifier          = try(aws_neptune_cluster.this[0].id, var.db_cluster_identifier)
-  db_cluster_snapshot_identifier = var.db_cluster_snapshot_identifier
+  db_cluster_snapshot_identifier = try(aws_neptune_cluster_snapshot.this[0].id, var.db_cluster_snapshot_identifier)
 
   dynamic "timeouts" {
     for_each = var.db_cluster_identifier != null ? [1] : []
@@ -142,7 +148,10 @@ resource "aws_neptune_cluster_parameter_group" "this" {
     }
   }
 
-  tags = merge(var.tags, var.neptune_cluster_parameter_group_tags)
+  tags = merge(
+    try(var.tags, {}),
+    try(var.neptune_cluster_parameter_group_tags, {})
+  )
 }
 
 resource "aws_neptune_parameter_group" "this" {
@@ -160,7 +169,10 @@ resource "aws_neptune_parameter_group" "this" {
     }
   }
 
-  tags = merge(var.tags, var.neptune_parameter_group_tags)
+  tags = merge(
+    try(var.tags, {}),
+    try(var.neptune_parameter_group_tags, {})
+  )
 }
 
 ######################
@@ -174,7 +186,10 @@ resource "aws_neptune_subnet_group" "this" {
   description = "Neptune Subnet Group"
   subnet_ids  = var.subnet_ids
 
-  tags = merge(var.tags, var.neptune_subnet_group_tags)
+  tags = merge(
+    try(var.tags, {}),
+    try(var.neptune_subnet_group_tags, {})
+  )
 }
 
 ######################
@@ -189,7 +204,10 @@ resource "aws_neptune_event_subscription" "this" {
   source_type   = var.event_subscriptions != null ? "db-instance" : null
   source_ids    = var.create_neptune_instance ? [aws_neptune_cluster_instance.primary[0].id] : []
 
-  tags = merge(var.tags, var.neptune_event_subscription_tags)
+  tags = merge(
+    try(var.tags, {}),
+    try(var.neptune_event_subscription_tags, {})
+  )
 }
 
 ######################
@@ -235,7 +253,10 @@ resource "aws_security_group" "this" {
     cidr_blocks = var.neptune_subnet_cidrs
   }
 
-  tags = merge(var.tags, var.neptune_security_group_tags)
+  tags = merge(
+    try(var.tags, {}),
+    try(var.neptune_security_group_tags, {})
+  )
 }
 
 ######################
@@ -269,7 +290,7 @@ resource "aws_iam_role" "this" {
     {
       "Name" = format("%s", var.neptune_role_name)
     },
-    var.tags,
+    try(var.tags, {}),
   )
 }
 

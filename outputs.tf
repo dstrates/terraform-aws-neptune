@@ -8,8 +8,13 @@ output "neptune_cluster_arn" {
   value       = try(aws_neptune_cluster.this[0].arn, null)
 }
 
+output "neptune_cluster_members" {
+  description = "List of Neptune Instances that are a part of this cluster"
+  value       = try(aws_neptune_cluster.this[0].cluster_members, null)
+}
+
 output "neptune_cluster_endpoint" {
-  description = "The endpoint of the Neptune cluster"
+  description = "The DNS endpoint of the Neptune cluster instance"
   value       = try(aws_neptune_cluster.this[0].endpoint, null)
 }
 
