@@ -1,3 +1,15 @@
+# v0.1.2 (Mon Jan 06 2025)
+
+#### 🐛 Bug Fix
+
+- fix: resolve self-referential cluster instance snapshot [#17](https://github.com/dstrates/terraform-aws-neptune/pull/17) ([@dstrates](https://github.com/dstrates))
+
+#### Authors: 1
+
+- [@dstrates](https://github.com/dstrates)
+
+---
+
 # v0.1.1 (Fri Jan 03 2025)
 
 #### 🐛 Bug Fix
