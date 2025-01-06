@@ -1,3 +1,16 @@
+# v0.1.3 (Mon Jan 06 2025)
+
+#### 🐛 Bug Fix
+
+- fix: make `cluster_identifier` optional for use with global clusters [#19](https://github.com/dstrates/terraform-aws-neptune/pull/19) ([@dstrates](https://github.com/dstrates))
+- docs: fix tf-docs output [#18](https://github.com/dstrates/terraform-aws-neptune/pull/18) ([@dstrates](https://github.com/dstrates))
+
+#### Authors: 1
+
+- [@dstrates](https://github.com/dstrates)
+
+---
+
 # v0.1.2 (Mon Jan 06 2025)
 
 #### 🐛 Bug Fix
