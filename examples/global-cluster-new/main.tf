@@ -156,7 +156,7 @@ module "neptune_global_primary" {
 
 module "neptune_global_secondary" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.0"
+  version = "0.1.2"
 
   providers = {
     aws = aws.secondary
