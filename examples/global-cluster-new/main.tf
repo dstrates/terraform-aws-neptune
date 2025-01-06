@@ -9,8 +9,13 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 }
+
 
 provider "aws" {
   region = "us-east-1"
@@ -92,7 +97,7 @@ data "aws_kms_key" "secondary" {
 
 module "neptune_global_primary" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.0"
+  version = "0.1.2"
 
   providers = {
     aws = aws.primary
