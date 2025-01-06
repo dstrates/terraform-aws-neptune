@@ -20,13 +20,17 @@ jobs:
     name: Terraform CI
     permissions:
       pull-requests: write
+      contents: write
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+
       - uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform fmt
+      - name: Terraform Format
         id: fmt
         run: terraform fmt -check
         continue-on-error: true
@@ -38,3 +42,11 @@ jobs:
       - name: Terraform Validate
         id: validate
         run: terraform validate -no-color
+
+      - name: Terraform Docs
+        uses: terraform-docs/gh-actions@v1.3.0
+        with:
+          working-dir: .
+          output-file: README.md
+          output-method: print
+          fail-on-diff: true
