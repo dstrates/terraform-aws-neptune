@@ -23,8 +23,9 @@ variable "backup_retention_period" {
 }
 
 variable "cluster_identifier" {
-  description = "The cluster identifier"
+  description = "The cluster identifier. Required if create_neptune_cluster is true."
   type        = string
+  default     = null
 }
 
 variable "cluster_identifier_prefix" {

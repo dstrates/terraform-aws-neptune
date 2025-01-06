@@ -53,7 +53,7 @@ data "aws_kms_key" "default" {
 # Assuming you have an existing standard Neptune cluster
 module "neptune_existing_cluster" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.2"
+  version = "0.1.3"
 
   create_neptune_cluster                 = true
   create_neptune_subnet_group            = true
@@ -95,7 +95,7 @@ module "neptune_existing_cluster" {
 # Create a global cluster referencing that cluster
 module "neptune_global_cluster" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.2"
+  version = "0.1.3"
 
   create_neptune_global_cluster               = true
   global_cluster_engine                       = "neptune"
