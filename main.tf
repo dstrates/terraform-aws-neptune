@@ -119,7 +119,10 @@ resource "aws_neptune_cluster_snapshot" "this" {
   count = var.create_neptune_cluster_snapshot ? 1 : 0
 
   db_cluster_identifier          = try(aws_neptune_cluster.this[0].id, var.db_cluster_identifier)
-  db_cluster_snapshot_identifier = try(aws_neptune_cluster_snapshot.this[0].id, var.db_cluster_snapshot_identifier)
+  db_cluster_snapshot_identifier = coalesce(
+    var.db_cluster_snapshot_identifier,
+    format("%s-%s", aws_neptune_cluster.this[0].id, random_id.snapshot_suffix.hex)
+  )
 
   dynamic "timeouts" {
     for_each = var.db_cluster_identifier != null ? [1] : []
@@ -299,4 +302,17 @@ resource "aws_iam_role_policy_attachment" "this" {
 
   role       = aws_iam_role.this[0].name
   policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/ROSAKMSProviderPolicy"
+}
+
+
+######################
+# Random ID
+######################
+
+resource "random_id" "snapshot_suffix" {
+  keepers = {
+    cluster_identifier = aws_neptune_cluster.this[0].id
+  }
+
+  byte_length = 4
 }
