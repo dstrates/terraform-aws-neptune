@@ -47,14 +47,14 @@ data "aws_kms_key" "default" {
 }
 
 ########################################
-# Create a Neptune cluster from existing DB cluster
+# Create a Global cluster from existing DB cluster
 ########################################
 
+# Assuming you have an existing standard Neptune cluster
 module "neptune_existing_cluster" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.2"
+  version = "0.1.3"
 
-  # Create a standard Neptune cluster first
   create_neptune_cluster                 = true
   create_neptune_subnet_group            = true
   create_neptune_cluster_parameter_group = true
@@ -90,23 +90,18 @@ module "neptune_existing_cluster" {
     Name        = "existing-neptune-cluster"
     Environment = "dev"
   }
-
-  # IMPORTANT:
-  # We'll use this cluster as a source for a global cluster.
-  # The global_cluster_identifier attribute will be set by the global cluster resource.
-  # We must instruct Terraform to ignore changes to global_cluster_identifier to prevent drift.
-  lifecycle {
-    ignore_changes = [global_cluster_identifier]
-  }
 }
 
-########################################
-# Create a Global Cluster from the Existing DB Cluster
-########################################
+# Create a global cluster referencing that cluster
+module "neptune_global_cluster" {
+  source  = "dstrates/neptune/aws"
+  version = "0.1.3"
 
-resource "aws_neptune_global_cluster" "this" {
-  global_cluster_identifier    = "my-global-neptune-cluster"
-  source_db_cluster_identifier = module.neptune_existing_cluster.aws_neptune_cluster_arn
+  create_neptune_global_cluster               = true
+  global_cluster_engine                       = "neptune"
+  global_cluster_engine_version               = "1.2.0.1"
+  global_cluster_identifier                   = "my-global-neptune-cluster"
+  global_cluster_source_db_cluster_identifier = module.neptune_existing_cluster.aws_neptune_cluster_arn
 }
 
 ########################################

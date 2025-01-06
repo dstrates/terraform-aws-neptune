@@ -73,7 +73,6 @@ resource "aws_neptune_global_cluster" "this" {
   storage_encrypted            = try(var.global_cluster_storage_encrypted, null)
 }
 
-
 ######################
 # Primary Cluster instance
 ######################
@@ -110,7 +109,6 @@ resource "aws_neptune_cluster_instance" "read_replicas" {
   )
 }
 
-
 ######################
 # Cluster snapshot
 ######################
@@ -118,7 +116,7 @@ resource "aws_neptune_cluster_instance" "read_replicas" {
 resource "aws_neptune_cluster_snapshot" "this" {
   count = var.create_neptune_cluster_snapshot ? 1 : 0
 
-  db_cluster_identifier          = try(aws_neptune_cluster.this[0].id, var.db_cluster_identifier)
+  db_cluster_identifier = try(aws_neptune_cluster.this[0].id, var.db_cluster_identifier)
   db_cluster_snapshot_identifier = coalesce(
     var.db_cluster_snapshot_identifier,
     format("%s-%s", aws_neptune_cluster.this[0].id, random_id.snapshot_suffix.hex)

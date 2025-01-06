@@ -23,8 +23,9 @@ variable "backup_retention_period" {
 }
 
 variable "cluster_identifier" {
-  description = "The cluster identifier"
+  description = "The cluster identifier. Required if create_neptune_cluster is true."
   type        = string
+  default     = null
 }
 
 variable "cluster_identifier_prefix" {
@@ -181,7 +182,7 @@ variable "global_cluster_identifier" {
 }
 
 variable "global_cluster_source_db_cluster_identifier" {
-  description = "(Optional) ARN of a Neptune DB Cluster to use as the primary DB cluster of the global cluster."
+  description = "(Optional) Amazon Resource Name (ARN) to use as the primary DB Cluster of the Global Cluster on creation. Terraform cannot perform drift detection of this value."
   type        = string
   default     = null
 }

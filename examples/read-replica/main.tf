@@ -96,7 +96,7 @@ data "aws_kms_key" "secondary" {
 
 module "neptune_primary" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.2"
+  version = "0.1.3"
 
   providers = {
     aws = aws.primary
@@ -145,7 +145,7 @@ module "neptune_primary" {
 
 module "neptune_replica" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.2"
+  version = "0.1.3"
 
   providers = {
     aws = aws.secondary
