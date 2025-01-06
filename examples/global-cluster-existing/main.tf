@@ -9,6 +9,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 }
 
@@ -48,7 +52,7 @@ data "aws_kms_key" "default" {
 
 module "neptune_existing_cluster" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.0"
+  version = "0.1.2"
 
   # Create a standard Neptune cluster first
   create_neptune_cluster                 = true

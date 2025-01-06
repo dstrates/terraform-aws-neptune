@@ -9,6 +9,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 }
 
@@ -91,7 +95,8 @@ data "aws_kms_key" "secondary" {
 ########################################
 
 module "neptune_primary" {
-  source = "../../modules/terraform-aws-neptune"
+  source  = "dstrates/neptune/aws"
+  version = "0.1.2"
 
   providers = {
     aws = aws.primary
@@ -139,7 +144,8 @@ module "neptune_primary" {
 ########################################
 
 module "neptune_replica" {
-  source = "../../modules/terraform-aws-neptune"
+  source  = "dstrates/neptune/aws"
+  version = "0.1.2"
 
   providers = {
     aws = aws.secondary

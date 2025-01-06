@@ -1,17 +1,25 @@
 module "neptune" {
-  source = "../../modules/terraform-aws-neptune"
+  source  = "dstrates/neptune/aws"
+  version = "0.1.2"
 
   apply_immediately                      = true
   backup_retention_period                = 5
   cluster_identifier                     = "neptune-db-dev-use2"
   copy_tags_to_snapshot                  = true
   create_neptune_cluster                 = true
+  create_neptune_cluster_endpoint        = true
   create_neptune_cluster_parameter_group = true
+  create_neptune_cluster_snapshot        = true
+  create_neptune_global_cluster          = false
+  create_neptune_iam_role                = true
   create_neptune_instance                = true
+  create_neptune_parameter_group         = true
+  create_neptune_security_group          = true
   create_neptune_subnet_group            = true
   enable_serverless                      = false
   engine_version                         = "1.2.0.0" # Neptune Serverless supported version is 1.2.0.1
   iam_database_authentication_enabled    = true
+  instance_class                         = "db.r5.large" # Neptune Serverless supported instance class is db.serverless
   kms_key_arn                            = data.aws_kms_key.default.arn
   max_capacity                           = 128
   min_capacity                           = 2.5
@@ -19,7 +27,6 @@ module "neptune" {
   preferred_maintenance_window           = "sun:06:00-sun:10:00"
   skip_final_snapshot                    = true
   subnet_ids                             = data.aws_subnets.db.ids
-  instance_class                         = "db.r5.large" # Neptune Serverless supported instance class is db.serverless
 
   neptune_cluster_parameters = {
     parameter1 = {
