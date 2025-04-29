@@ -44,7 +44,7 @@ jobs:
         run: terraform validate -no-color
 
       - name: Terraform Docs
-        uses: terraform-docs/gh-actions@v1.3.0
+        uses: terraform-docs/gh-actions@v1.4.1
         with:
           working-dir: .
           output-file: README.md
