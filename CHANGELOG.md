@@ -1,3 +1,26 @@
+# v0.1.4 (Tue May 06 2025)
+
+#### 🐛 Bug Fix
+
+- fix: add count guard to random suffix resource [#30](https://github.com/dstrates/terraform-aws-neptune/pull/30) ([@dstrates](https://github.com/dstrates))
+- chore(deps): update tj-actions/changed-files action to v46 [#27](https://github.com/dstrates/terraform-aws-neptune/pull/27) ([@renovate[bot]](https://github.com/renovate[bot]))
+- chore(deps): update trufflesecurity/trufflehog action to v3.88.28 [#29](https://github.com/dstrates/terraform-aws-neptune/pull/29) ([@renovate[bot]](https://github.com/renovate[bot]))
+- chore(deps): update dependencies [#26](https://github.com/dstrates/terraform-aws-neptune/pull/26) ([@renovate[bot]](https://github.com/renovate[bot]))
+- chore(deps): update trufflesecurity/trufflehog action to v3.88.14 [#25](https://github.com/dstrates/terraform-aws-neptune/pull/25) ([@renovate[bot]](https://github.com/renovate[bot]))
+- chore(deps): update trufflesecurity/trufflehog action to v3.88.12 [#24](https://github.com/dstrates/terraform-aws-neptune/pull/24) ([@renovate[bot]](https://github.com/renovate[bot]))
+- chore(deps): update trufflesecurity/trufflehog action to v3.88.11 [#23](https://github.com/dstrates/terraform-aws-neptune/pull/23) ([@renovate[bot]](https://github.com/renovate[bot]))
+- chore(deps): update dependencies [#22](https://github.com/dstrates/terraform-aws-neptune/pull/22) ([@renovate[bot]](https://github.com/renovate[bot]))
+- chore(deps): update davidanson/markdownlint-cli2-action action to v19.1.0 [#21](https://github.com/dstrates/terraform-aws-neptune/pull/21) ([@renovate[bot]](https://github.com/renovate[bot]))
+- chore(deps): update trufflesecurity/trufflehog action to v3.88.2 [#20](https://github.com/dstrates/terraform-aws-neptune/pull/20) ([@renovate[bot]](https://github.com/renovate[bot]))
+- chore(deps): update tj-actions/changed-files action to v45.0.6 [#16](https://github.com/dstrates/terraform-aws-neptune/pull/16) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 2
+
+- [@dstrates](https://github.com/dstrates)
+- [@renovate[bot]](https://github.com/renovate[bot])
+
+---
+
 # v0.1.3 (Mon Jan 06 2025)
 
 #### 🐛 Bug Fix
