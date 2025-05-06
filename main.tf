@@ -116,10 +116,17 @@ resource "aws_neptune_cluster_instance" "read_replicas" {
 resource "aws_neptune_cluster_snapshot" "this" {
   count = var.create_neptune_cluster_snapshot ? 1 : 0
 
-  db_cluster_identifier = try(aws_neptune_cluster.this[0].id, var.db_cluster_identifier)
+  db_cluster_identifier = (var.create_neptune_cluster
+    ? aws_neptune_cluster.this[0].id
+    : var.db_cluster_identifier
+  )
+
   db_cluster_snapshot_identifier = coalesce(
     var.db_cluster_snapshot_identifier,
-    format("%s-%s", aws_neptune_cluster.this[0].id, random_id.snapshot_suffix.hex)
+    format("%s-%s",
+      aws_neptune_cluster.this[0].id,
+      random_id.snapshot_suffix[0].hex
+    )
   )
 
   dynamic "timeouts" {
@@ -308,6 +315,8 @@ resource "aws_iam_role_policy_attachment" "this" {
 ######################
 
 resource "random_id" "snapshot_suffix" {
+  count = var.create_neptune_cluster_snapshot && var.create_neptune_cluster ? 1 : 0
+
   keepers = {
     cluster_identifier = aws_neptune_cluster.this[0].id
   }
