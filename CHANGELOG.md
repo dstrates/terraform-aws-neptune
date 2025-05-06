@@ -1,3 +1,15 @@
+# v0.2.0 (Tue May 06 2025)
+
+#### 🚀 Enhancement
+
+- feat: allow existing subnets to be filtered by tag [#31](https://github.com/dstrates/terraform-aws-neptune/pull/31) ([@dstrates](https://github.com/dstrates))
+
+#### Authors: 1
+
+- [@dstrates](https://github.com/dstrates)
+
+---
+
 # v0.1.4 (Tue May 06 2025)
 
 #### 🐛 Bug Fix
