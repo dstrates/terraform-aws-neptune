@@ -407,6 +407,17 @@ variable "subnet_ids" {
   default     = null
 }
 
+variable "subnet_name_filters" {
+  description = "When subnet_ids = null, you can filter subnets by tags instead of supplying IDs."
+  type        = map(list(string))
+  default     = {}
+
+  validation {
+    condition     = !(length(var.subnet_ids) > 0 && length(var.subnet_name_filters) > 0)
+    error_message = "You must set either subnet_ids or subnet_name_filters, not both."
+  }
+}
+
 variable "tags" {
   description = "A map of tags to assign to the Neptune cluster"
   type        = map(string)

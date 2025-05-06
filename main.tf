@@ -180,12 +180,34 @@ resource "aws_neptune_parameter_group" "this" {
 # Subnet groups
 ######################
 
+locals {
+  networking = {
+    final_ids = length(var.subnet_ids) > 0 ? (
+      var.subnet_ids
+      ) : (
+      data.aws_subnets.filtered[0].ids
+    )
+  }
+}
+
+data "aws_subnets" "filtered" {
+  count = length(var.subnet_ids) == 0 ? 1 : 0
+
+  dynamic "filter" {
+    for_each = var.subnet_name_filters
+    content {
+      name   = filter.key
+      values = filter.value
+    }
+  }
+}
+
 resource "aws_neptune_subnet_group" "this" {
   count = var.create_neptune_subnet_group ? 1 : 0
 
   name        = "subnet-group-${var.cluster_identifier}"
   description = "Neptune Subnet Group"
-  subnet_ids  = var.subnet_ids
+  subnet_ids  = local.networking.final_ids
 
   tags = merge(
     try(var.tags, {}),
