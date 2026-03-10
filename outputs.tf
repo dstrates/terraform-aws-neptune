@@ -97,3 +97,8 @@ output "neptune_global_cluster_members" {
   description = "A set of objects containing global cluster members"
   value       = try(aws_neptune_global_cluster.this[0].global_cluster_members, [])
 }
+
+output "neptune_primary_instance_publicly_accessible" {
+  description = "Whether the primary Neptune cluster instance is publicly accessible"
+  value       = try(aws_neptune_cluster_instance.primary[0].publicly_accessible, false)
+}

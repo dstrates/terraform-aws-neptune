@@ -435,3 +435,15 @@ variable "vpc_security_group_ids" {
   type        = list(string)
   default     = null
 }
+
+variable "publicly_accessible" {
+  description = "(Optional) Bool to control if Neptune cluster instances are publicly accessible. Requires instances to be in a public subnet with an internet gateway."
+  type        = bool
+  default     = false
+}
+
+variable "public_cidr_blocks" {
+  description = "(Optional) List of public CIDR blocks allowed inbound/outbound Neptune traffic when publicly_accessible = true. Only used when create_neptune_security_group = true."
+  type        = list(string)
+  default     = []
+}
