@@ -335,7 +335,7 @@ data "aws_iam_policy_document" "this" {
 
     principals {
       type        = "Service"
-      identifiers = ["neptune.amazonaws.com"]
+      identifiers = ["rds.amazonaws.com"]
     }
   }
 }

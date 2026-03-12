@@ -35,12 +35,12 @@ output "neptune_cluster_snapshot_identifier" {
 
 output "neptune_iam_role_arn" {
   description = "ARN of the IAM role for Neptune"
-  value       = try(aws_iam_role.this[0].arn, null)
+  value       = try(aws_iam_role.this[0].arn, "")
 }
 
 output "neptune_primary_instance_id" {
   description = "ID of the primary Neptune cluster instance"
-  value       = try(aws_neptune_cluster_instance.primary[0].id, null)
+  value       = try(aws_neptune_cluster_instance.primary[0].id, "")
 }
 
 output "neptune_read_replica_ids" {

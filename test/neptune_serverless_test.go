@@ -8,7 +8,6 @@ import (
 	"github.com/gruntwork-io/terratest/modules/files"
 	"github.com/gruntwork-io/terratest/modules/random"
 	"github.com/gruntwork-io/terratest/modules/terraform"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -76,63 +75,63 @@ func TestNeptuneServerlessCluster(t *testing.T) {
 	clusterIDOut := terraform.Output(t, opts, "neptune_cluster_id")
 	// Assert the suffix is present rather than requiring exact equality. This
 	// is resilient to module-level naming changes that preserve uniqueness.
-	assert.Contains(t, clusterIDOut, suffix, "cluster ID should contain the test suffix")
+	require.Contains(t, clusterIDOut, suffix, "cluster ID should contain the test suffix")
 
 	clusterARN := terraform.Output(t, opts, "neptune_cluster_arn")
-	assert.True(t, strings.HasPrefix(clusterARN, "arn:"), "cluster ARN should be a valid ARN")
+	require.True(t, strings.HasPrefix(clusterARN, "arn:"), "cluster ARN should be a valid ARN")
 
 	clusterEndpoint := terraform.Output(t, opts, "neptune_cluster_endpoint")
-	assert.NotEmpty(t, clusterEndpoint, "cluster endpoint should be non-empty")
-	assert.Contains(t, clusterEndpoint, ".neptune.", "endpoint should be a Neptune DNS name")
+	require.NotEmpty(t, clusterEndpoint, "cluster endpoint should be non-empty")
+	require.Contains(t, clusterEndpoint, ".neptune.", "endpoint should be a Neptune DNS name")
 
 	readerEndpoint := terraform.Output(t, opts, "neptune_cluster_reader_endpoint")
-	assert.NotEmpty(t, readerEndpoint, "reader endpoint should be non-empty")
+	require.NotEmpty(t, readerEndpoint, "reader endpoint should be non-empty")
 
 	resourceID := terraform.Output(t, opts, "neptune_cluster_resource_id")
-	assert.True(t, strings.HasPrefix(resourceID, "cluster-"), "cluster resource ID should start with 'cluster-'")
+	require.True(t, strings.HasPrefix(resourceID, "cluster-"), "cluster resource ID should start with 'cluster-'")
 
 	// ── Instance outputs ─────────────────────────────────────────────────────
 
 	primaryInstanceID := terraform.Output(t, opts, "neptune_primary_instance_id")
-	assert.NotEmpty(t, primaryInstanceID, "primary instance ID should be set")
+	require.NotEmpty(t, primaryInstanceID, "primary instance ID should be set")
 
 	replicaIDs := terraform.OutputList(t, opts, "neptune_read_replica_ids")
-	assert.Empty(t, replicaIDs, "no read replicas expected with read_replica_count=0")
+	require.Empty(t, replicaIDs, "no read replicas expected with read_replica_count=0")
 
 	publiclyAccessible := terraform.Output(t, opts, "neptune_primary_instance_publicly_accessible")
-	assert.Equal(t, "false", publiclyAccessible, "primary instance should not be publicly accessible by default")
+	require.Equal(t, "false", publiclyAccessible, "primary instance should not be publicly accessible by default")
 
 	// ── IAM role ─────────────────────────────────────────────────────────────
 
 	iamRoleARN := terraform.Output(t, opts, "neptune_iam_role_arn")
-	assert.True(t, strings.HasPrefix(iamRoleARN, "arn:"), "IAM role ARN should be a valid ARN")
-	assert.Contains(t, iamRoleARN, ":iam:", "ARN should reference IAM service")
+	require.True(t, strings.HasPrefix(iamRoleARN, "arn:"), "IAM role ARN should be a valid ARN")
+	require.Contains(t, iamRoleARN, ":iam:", "ARN should reference IAM service")
 	assertNeptuneTrustPolicy(t, roleNameFromARN(iamRoleARN), region)
 
 	// ── Parameter groups ─────────────────────────────────────────────────────
 
 	clusterPGID := terraform.Output(t, opts, "neptune_parameter_group_id")
-	assert.NotEmpty(t, clusterPGID, "cluster parameter group ID should be set")
-	assert.Contains(t, clusterPGID, "cluster-parameter-group-", "should use module naming convention")
+	require.NotEmpty(t, clusterPGID, "cluster parameter group ID should be set")
+	require.Contains(t, clusterPGID, "cluster-parameter-group-", "should use module naming convention")
 
 	dbPGID := terraform.Output(t, opts, "neptune_db_parameter_group_id")
-	assert.NotEmpty(t, dbPGID, "DB parameter group ID should be set")
-	assert.Contains(t, dbPGID, "parameter-group-", "should use module naming convention")
+	require.NotEmpty(t, dbPGID, "DB parameter group ID should be set")
+	require.Contains(t, dbPGID, "parameter-group-", "should use module naming convention")
 
 	assertClusterParameterGroup(t, clusterIDOut, region, "cluster-parameter-group-")
 
 	// ── Subnet group ─────────────────────────────────────────────────────────
 
 	subnetGroupID := terraform.Output(t, opts, "neptune_subnet_group_id")
-	assert.NotEmpty(t, subnetGroupID, "subnet group ID should be set")
+	require.NotEmpty(t, subnetGroupID, "subnet group ID should be set")
 
 	assertSubnetGroupMembers(t, subnetGroupID, region, vpc.SubnetIDs)
 
 	// ── Security group ───────────────────────────────────────────────────────
 
 	sgID := terraform.Output(t, opts, "neptune_security_group_id")
-	assert.NotEmpty(t, sgID, "security group ID should be set")
-	assert.True(t, strings.HasPrefix(sgID, "sg-"), "security group ID should start with 'sg-'")
+	require.NotEmpty(t, sgID, "security group ID should be set")
+	require.True(t, strings.HasPrefix(sgID, "sg-"), "security group ID should start with 'sg-'")
 
 	assertSecurityGroupRules(t, sgID, vpc.VPCCIDR, region)
 	assertServerlessScalingConfig(t, clusterIDOut, region, minCapacity, maxCapacity)
@@ -181,13 +180,13 @@ func TestNeptuneReadReplicas(t *testing.T) {
 	terraform.InitAndApply(t, opts)
 
 	replicaIDs := terraform.OutputList(t, opts, "neptune_read_replica_ids")
-	assert.Len(t, replicaIDs, 2, "expected exactly 2 read replica instances")
+	require.Len(t, replicaIDs, 2, "expected exactly 2 read replica instances")
 
 	primaryInstanceID := terraform.Output(t, opts, "neptune_primary_instance_id")
-	assert.NotEmpty(t, primaryInstanceID, "primary instance should still be created")
+	require.NotEmpty(t, primaryInstanceID, "primary instance should still be created")
 
 	for _, id := range replicaIDs {
-		assert.NotEqual(t, primaryInstanceID, id, "replica ID must differ from primary ID")
+		require.NotEqual(t, primaryInstanceID, id, "replica ID must differ from primary ID")
 	}
 }
 
@@ -230,14 +229,14 @@ func TestNeptuneNoInstanceCreated(t *testing.T) {
 
 	// Cluster should still be created
 	clusterID := terraform.Output(t, opts, "neptune_cluster_id")
-	assert.NotEmpty(t, clusterID, "cluster should be created even without instances")
+	require.NotEmpty(t, clusterID, "cluster should be created even without instances")
 
 	// Instance outputs must be empty
 	primaryInstanceID := terraform.Output(t, opts, "neptune_primary_instance_id")
-	assert.Empty(t, primaryInstanceID, "primary instance should not be created")
+	require.Empty(t, primaryInstanceID, "primary instance should not be created")
 
 	replicaIDs := terraform.OutputList(t, opts, "neptune_read_replica_ids")
-	assert.Empty(t, replicaIDs, "no replicas should be created")
+	require.Empty(t, replicaIDs, "no replicas should be created")
 }
 
 // TestNeptuneNoIAMRole validates that create_neptune_iam_role=false produces no
@@ -279,7 +278,7 @@ func TestNeptuneNoIAMRole(t *testing.T) {
 	terraform.InitAndApply(t, opts)
 
 	iamRoleARN := terraform.Output(t, opts, "neptune_iam_role_arn")
-	assert.Empty(t, iamRoleARN, "IAM role ARN should be empty when create_neptune_iam_role=false")
+	require.Empty(t, iamRoleARN, "IAM role ARN should be empty when create_neptune_iam_role=false")
 }
 
 // TestNeptuneTagsApplied verifies that caller-supplied tags appear on the
@@ -329,7 +328,7 @@ func TestNeptuneTagsApplied(t *testing.T) {
 
 	actualTags := getTagsForNeptuneCluster(t, clusterARN, region)
 	for k, v := range expectedTags {
-		assert.Equal(t, v, actualTags[k], "tag %q should have value %q", k, v)
+		require.Equal(t, v, actualTags[k], "tag %q should have value %q", k, v)
 	}
 }
 
@@ -374,10 +373,10 @@ func TestNeptuneClusterSnapshot(t *testing.T) {
 	clusterIDOut := terraform.Output(t, opts, "neptune_cluster_id")
 
 	snapshotID := terraform.Output(t, opts, "neptune_cluster_snapshot_identifier")
-	assert.NotEmpty(t, snapshotID, "snapshot identifier should be set")
+	require.NotEmpty(t, snapshotID, "snapshot identifier should be set")
 	// Use Contains rather than HasPrefix so the assertion holds if the module
 	// ever changes its naming scheme while keeping the cluster ID embedded.
-	assert.Contains(t, snapshotID, clusterIDOut,
+	require.Contains(t, snapshotID, clusterIDOut,
 		"snapshot identifier %q should contain cluster ID %q", snapshotID, clusterIDOut)
 }
 
@@ -424,7 +423,7 @@ func TestNeptuneValidation_ServerlessMismatch(t *testing.T) {
 
 	_, err := terraform.InitAndPlanE(t, opts)
 	require.Error(t, err, "plan should fail when instance_class is not db.serverless with enable_serverless=true")
-	assert.Contains(t, err.Error(), "db.serverless", "error message should reference the required instance class")
+	require.Contains(t, err.Error(), "db.serverless", "error message should reference the required instance class")
 }
 
 // TestNeptuneValidation_MissingSubnetConfig validates that the subnet group
@@ -460,7 +459,7 @@ func TestNeptuneValidation_MissingSubnetConfig(t *testing.T) {
 
 	_, err := terraform.InitAndPlanE(t, opts)
 	require.Error(t, err, "plan should fail without subnet_ids or subnet_name_filters")
-	assert.Contains(t, err.Error(), "subnet", "error message should reference subnet configuration")
+	require.Contains(t, err.Error(), "subnet", "error message should reference subnet configuration")
 }
 
 // TestNeptuneValidation_PublicWithoutSubnet validates that the precondition
@@ -494,5 +493,5 @@ func TestNeptuneValidation_PublicWithoutSubnet(t *testing.T) {
 
 	_, err := terraform.InitAndPlanE(t, opts)
 	require.Error(t, err, "plan should fail when publicly_accessible=false without subnet group")
-	assert.Contains(t, err.Error(), "neptune_subnet_group_name", "error should reference subnet group requirement")
+	require.Contains(t, err.Error(), "neptune_subnet_group_name", "error should reference subnet group requirement")
 }
