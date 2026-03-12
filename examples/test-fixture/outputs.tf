@@ -49,3 +49,7 @@ output "neptune_security_group_id" {
 output "neptune_cluster_snapshot_identifier" {
   value = module.neptune.neptune_cluster_snapshot_identifier
 }
+
+output "neptune_primary_instance_publicly_accessible" {
+  value = module.neptune.neptune_primary_instance_publicly_accessible
+}

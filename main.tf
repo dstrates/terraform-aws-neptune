@@ -87,6 +87,7 @@ resource "aws_neptune_cluster_instance" "primary" {
   instance_class               = var.instance_class
   neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
   neptune_subnet_group_name    = coalesce(try(aws_neptune_subnet_group.this[0].name, null), var.neptune_subnet_group_name)
+  publicly_accessible          = var.publicly_accessible
 
   tags = merge(var.tags, var.neptune_cluster_instance_tags)
 
@@ -94,6 +95,10 @@ resource "aws_neptune_cluster_instance" "primary" {
     precondition {
       condition     = var.create_neptune_cluster
       error_message = "create_neptune_instance requires create_neptune_cluster = true."
+    }
+    precondition {
+      condition     = var.publicly_accessible || var.create_neptune_subnet_group || var.neptune_subnet_group_name != null
+      error_message = "neptune_subnet_group_name is required on cluster instances when publicly_accessible = false. Set create_neptune_subnet_group = true or provide neptune_subnet_group_name."
     }
   }
 }
@@ -109,6 +114,7 @@ resource "aws_neptune_cluster_instance" "read_replicas" {
   instance_class               = var.instance_class
   neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
   neptune_subnet_group_name    = coalesce(try(aws_neptune_subnet_group.this[0].name, null), var.neptune_subnet_group_name)
+  publicly_accessible          = var.publicly_accessible
 
   tags = merge(var.tags, var.neptune_cluster_instance_tags)
 
@@ -116,6 +122,10 @@ resource "aws_neptune_cluster_instance" "read_replicas" {
     precondition {
       condition     = var.create_neptune_cluster
       error_message = "create_neptune_instance requires create_neptune_cluster = true."
+    }
+    precondition {
+      condition     = var.publicly_accessible || var.create_neptune_subnet_group || var.neptune_subnet_group_name != null
+      error_message = "neptune_subnet_group_name is required on cluster instances when publicly_accessible = false. Set create_neptune_subnet_group = true or provide neptune_subnet_group_name."
     }
   }
 }
@@ -299,7 +309,7 @@ resource "aws_security_group" "this" {
     from_port   = var.neptune_port
     to_port     = var.neptune_port
     protocol    = "tcp"
-    cidr_blocks = var.neptune_subnet_cidrs
+    cidr_blocks = var.publicly_accessible ? concat(var.neptune_subnet_cidrs, var.public_cidr_blocks) : var.neptune_subnet_cidrs
   }
 
   egress {
@@ -307,7 +317,7 @@ resource "aws_security_group" "this" {
     from_port   = var.neptune_port
     to_port     = var.neptune_port
     protocol    = "tcp"
-    cidr_blocks = var.neptune_subnet_cidrs
+    cidr_blocks = var.publicly_accessible ? concat(var.neptune_subnet_cidrs, var.public_cidr_blocks) : var.neptune_subnet_cidrs
   }
 
   tags = merge(var.tags, var.neptune_security_group_tags)

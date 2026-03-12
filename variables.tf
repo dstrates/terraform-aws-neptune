@@ -139,7 +139,7 @@ variable "enable_serverless" {
 variable "engine_version" {
   description = "The database engine version. When enable_serverless = true, must be 1.2.0.1 or above."
   type        = string
-  default     = "1.4.7.0"
+  default     = "1.2.0.1"
 }
 
 variable "event_subscriptions" {
@@ -439,4 +439,16 @@ variable "vpc_security_group_ids" {
   description = "(Optional) List of VPC security groups to associate with the Cluster"
   type        = list(string)
   default     = null
+}
+
+variable "publicly_accessible" {
+  description = "(Optional) Bool to control if Neptune cluster instances are publicly accessible. Requires instances to be in a public subnet with an internet gateway."
+  type        = bool
+  default     = false
+}
+
+variable "public_cidr_blocks" {
+  description = "(Optional) List of public CIDR blocks allowed inbound/outbound Neptune traffic when publicly_accessible = true. Only used when create_neptune_security_group = true."
+  type        = list(string)
+  default     = []
 }

@@ -44,7 +44,7 @@ variable "vpc_security_group_ids" {
 
 variable "engine_version" {
   type    = string
-  default = "1.3.0.0"
+  default = "1.4.7.0"
 }
 
 variable "enable_serverless" {
@@ -99,7 +99,7 @@ variable "create_neptune_parameter_group" {
 
 variable "neptune_family" {
   type    = string
-  default = "neptune1.3"
+  default = "neptune1.4"
 }
 
 variable "neptune_cluster_parameters" {
@@ -141,4 +141,19 @@ variable "backup_retention_period" {
 variable "tags" {
   type    = map(string)
   default = {}
+}
+
+variable "publicly_accessible" {
+  type    = bool
+  default = false
+}
+
+variable "public_cidr_blocks" {
+  type    = list(string)
+  default = []
+}
+
+variable "create_neptune_subnet_group" {
+  type    = bool
+  default = true
 }

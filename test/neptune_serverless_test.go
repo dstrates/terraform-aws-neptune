@@ -47,7 +47,7 @@ func TestNeptuneServerlessCluster(t *testing.T) {
 			"subnet_ids":                             vpc.SubnetIDs,
 			"vpc_id":                                 vpc.VPCID,
 			"neptune_subnet_cidrs":                   []string{vpc.VPCCIDR},
-			"engine_version":                         "1.3.0.0",
+			"engine_version":                         "1.4.7.0",
 			"enable_serverless":                      true,
 			"instance_class":                         "db.serverless",
 			"min_capacity":                           minCapacity,
@@ -56,7 +56,7 @@ func TestNeptuneServerlessCluster(t *testing.T) {
 			"create_neptune_iam_role":                true,
 			"create_neptune_cluster_parameter_group": true,
 			"create_neptune_parameter_group":         true,
-			"neptune_family":                         "neptune1.3",
+			"neptune_family":                         "neptune1.4",
 			"storage_encrypted":                      true,
 			"backup_retention_period":                1,
 			"tags": map[string]string{
@@ -98,6 +98,9 @@ func TestNeptuneServerlessCluster(t *testing.T) {
 
 	replicaIDs := terraform.OutputList(t, opts, "neptune_read_replica_ids")
 	assert.Empty(t, replicaIDs, "no read replicas expected with read_replica_count=0")
+
+	publiclyAccessible := terraform.Output(t, opts, "neptune_primary_instance_publicly_accessible")
+	assert.Equal(t, "false", publiclyAccessible, "primary instance should not be publicly accessible by default")
 
 	// ── IAM role ─────────────────────────────────────────────────────────────
 
@@ -158,14 +161,14 @@ func TestNeptuneReadReplicas(t *testing.T) {
 			"subnet_ids":              vpc.SubnetIDs,
 			"vpc_id":                  vpc.VPCID,
 			"neptune_subnet_cidrs":    []string{vpc.VPCCIDR},
-			"engine_version":          "1.3.0.0",
+			"engine_version":          "1.4.7.0",
 			"enable_serverless":       true,
 			"instance_class":          "db.serverless",
 			"min_capacity":            2.5,
 			"max_capacity":            8,
 			"create_neptune_instance": true,
 			"read_replica_count":      2,
-			"neptune_family":          "neptune1.3",
+			"neptune_family":          "neptune1.4",
 			"storage_encrypted":       true,
 			"backup_retention_period": 1,
 		},
@@ -209,11 +212,11 @@ func TestNeptuneNoInstanceCreated(t *testing.T) {
 			"suffix":                  suffix,
 			"subnet_ids":              vpc.SubnetIDs,
 			"vpc_id":                  vpc.VPCID,
-			"engine_version":          "1.3.0.0",
+			"engine_version":          "1.4.7.0",
 			"enable_serverless":       true,
 			"instance_class":          "db.serverless",
 			"create_neptune_instance": false,
-			"neptune_family":          "neptune1.3",
+			"neptune_family":          "neptune1.4",
 			"storage_encrypted":       true,
 			"backup_retention_period": 1,
 		},
@@ -258,12 +261,12 @@ func TestNeptuneNoIAMRole(t *testing.T) {
 			"suffix":                  suffix,
 			"subnet_ids":              vpc.SubnetIDs,
 			"vpc_id":                  vpc.VPCID,
-			"engine_version":          "1.3.0.0",
+			"engine_version":          "1.4.7.0",
 			"enable_serverless":       true,
 			"instance_class":          "db.serverless",
 			"create_neptune_instance": false,
 			"create_neptune_iam_role": false,
-			"neptune_family":          "neptune1.3",
+			"neptune_family":          "neptune1.4",
 			"storage_encrypted":       true,
 			"backup_retention_period": 1,
 		},
@@ -304,11 +307,11 @@ func TestNeptuneTagsApplied(t *testing.T) {
 			"suffix":                  suffix,
 			"subnet_ids":              vpc.SubnetIDs,
 			"vpc_id":                  vpc.VPCID,
-			"engine_version":          "1.3.0.0",
+			"engine_version":          "1.4.7.0",
 			"enable_serverless":       true,
 			"instance_class":          "db.serverless",
 			"create_neptune_instance": false,
-			"neptune_family":          "neptune1.3",
+			"neptune_family":          "neptune1.4",
 			"storage_encrypted":       true,
 			"backup_retention_period": 1,
 			"tags":                    expectedTags,
@@ -351,11 +354,11 @@ func TestNeptuneClusterSnapshot(t *testing.T) {
 			"suffix":                          suffix,
 			"subnet_ids":                      vpc.SubnetIDs,
 			"vpc_id":                          vpc.VPCID,
-			"engine_version":                  "1.3.0.0",
+			"engine_version":                  "1.4.7.0",
 			"enable_serverless":               true,
 			"instance_class":                  "db.serverless",
 			"create_neptune_instance":         false,
-			"neptune_family":                  "neptune1.3",
+			"neptune_family":                  "neptune1.4",
 			"storage_encrypted":               true,
 			"backup_retention_period":         1,
 			"create_neptune_cluster_snapshot": true,
@@ -409,11 +412,11 @@ func TestNeptuneValidation_ServerlessMismatch(t *testing.T) {
 			"aws_region":                      "us-east-1",
 			"aws_skip_credentials_validation": true,
 			"subnet_ids":                      []string{"subnet-00000000"},
-			"engine_version":                  "1.3.0.0",
+			"engine_version":                  "1.4.7.0",
 			"enable_serverless":               true,
 			"instance_class":                  "db.r5.large", // invalid with enable_serverless=true
 			"create_neptune_instance":         false,
-			"neptune_family":                  "neptune1.3",
+			"neptune_family":                  "neptune1.4",
 			"storage_encrypted":               true,
 			"backup_retention_period":         1,
 		},
@@ -445,11 +448,11 @@ func TestNeptuneValidation_MissingSubnetConfig(t *testing.T) {
 			"aws_region":                      "us-east-1",
 			"aws_skip_credentials_validation": true,
 			"subnet_ids":                      []string{}, // empty — should trigger precondition
-			"engine_version":                  "1.3.0.0",
+			"engine_version":                  "1.4.7.0",
 			"enable_serverless":               true,
 			"instance_class":                  "db.serverless",
 			"create_neptune_instance":         false,
-			"neptune_family":                  "neptune1.3",
+			"neptune_family":                  "neptune1.4",
 			"storage_encrypted":               true,
 			"backup_retention_period":         1,
 		},
@@ -458,4 +461,38 @@ func TestNeptuneValidation_MissingSubnetConfig(t *testing.T) {
 	_, err := terraform.InitAndPlanE(t, opts)
 	require.Error(t, err, "plan should fail without subnet_ids or subnet_name_filters")
 	assert.Contains(t, err.Error(), "subnet", "error message should reference subnet configuration")
+}
+
+// TestNeptuneValidation_PublicWithoutSubnet validates that the precondition
+// fires when publicly_accessible = false and no subnet group is configured.
+//
+// No AWS resources are created — this is a plan-only validation test. Run with:
+// go test -v -run TestNeptuneValidation_PublicWithoutSubnet -timeout 5m
+func TestNeptuneValidation_PublicWithoutSubnet(t *testing.T) {
+	t.Parallel()
+	fixtureDir := copyModuleRootToTemp(t)
+	suffix := strings.ToLower(random.UniqueId())
+
+	opts := &terraform.Options{
+		TerraformDir: fixtureDir,
+		Vars: map[string]interface{}{
+			"suffix":                          suffix,
+			"aws_region":                      "us-east-1",
+			"aws_skip_credentials_validation": true,
+			"subnet_ids":                      []string{"subnet-00000000"},
+			"engine_version":                  "1.4.7.0",
+			"enable_serverless":               true,
+			"instance_class":                  "db.serverless",
+			"create_neptune_instance":         true,
+			"neptune_family":                  "neptune1.4",
+			"storage_encrypted":               true,
+			"backup_retention_period":         1,
+			"publicly_accessible":             false,
+			"create_neptune_subnet_group":     false,
+		},
+	}
+
+	_, err := terraform.InitAndPlanE(t, opts)
+	require.Error(t, err, "plan should fail when publicly_accessible=false without subnet group")
+	assert.Contains(t, err.Error(), "neptune_subnet_group_name", "error should reference subnet group requirement")
 }
