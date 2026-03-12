@@ -1,3 +1,7 @@
+# Ignore auto-generated files
+ignores:
+  - CHANGELOG.md
+
 # Disable some built-in rules
 config:
   no-duplicate-heading: false # MD024
