@@ -162,7 +162,6 @@ variable "final_snapshot_identifier" {
   default     = null
 }
 
-
 variable "global_cluster_engine" {
   description = "(Optional) Name of the database engine to be used for the global cluster. Valid values: neptune."
   type        = string
@@ -199,11 +198,16 @@ variable "global_cluster_storage_encrypted" {
   default     = null
 }
 
-
 variable "iam_database_authentication_enabled" {
   description = "Specifies whether IAM database authentication is enabled"
   type        = bool
   default     = true
+}
+
+variable "iam_role_policies" {
+  description = "(Optional) List of IAM policy ARNs to attach to the Neptune IAM role. Example: [\"arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess\"] for bulk load."
+  type        = list(string)
+  default     = []
 }
 
 variable "iam_roles" {
@@ -336,15 +340,27 @@ variable "neptune_security_group_tags" {
 }
 
 variable "neptune_subnet_cidrs" {
-  description = "A list of subnet CIDRs where the Neptune cluster is situated"
+  description = "CIDR blocks allowed to reach the Neptune port. Used for the ingress rule on the managed security group."
   type        = list(string)
   default     = ["10.0.0.0/8"]
+}
+
+variable "neptune_subnet_group_name" {
+  description = "(Optional) Name of an existing Neptune subnet group to use when create_neptune_subnet_group = false."
+  type        = string
+  default     = null
 }
 
 variable "neptune_subnet_group_tags" {
   description = "Tags for the Neptune subnet group"
   type        = map(string)
   default     = {}
+}
+
+variable "port" {
+  description = "(Optional) The port on which the Neptune accepts connections."
+  type        = number
+  default     = 8182
 }
 
 variable "preferred_backup_window" {
@@ -357,12 +373,6 @@ variable "preferred_maintenance_window" {
   description = "(Optional) The weekly time range during which system maintenance can occur, in UTC, e.g., 'wed:04:00-wed:04:30'."
   type        = string
   default     = null
-}
-
-variable "port" {
-  description = "(Optional) The port on which the Neptune accepts connections."
-  type        = number
-  default     = 8182
 }
 
 variable "read_replica_count" {
@@ -411,11 +421,6 @@ variable "subnet_name_filters" {
   description = "When subnet_ids = null, you can filter subnets by tags instead of supplying IDs."
   type        = map(list(string))
   default     = {}
-
-  validation {
-    condition     = !(length(var.subnet_ids) > 0 && length(var.subnet_name_filters) > 0)
-    error_message = "You must set either subnet_ids or subnet_name_filters, not both."
-  }
 }
 
 variable "tags" {

@@ -10,35 +10,35 @@ resource "aws_neptune_cluster" "this" {
   count = var.create_neptune_cluster ? 1 : 0
 
   # Core configuration
-  cluster_identifier          = try(var.cluster_identifier, null)
-  cluster_identifier_prefix   = try(var.cluster_identifier_prefix, null)
+  cluster_identifier          = var.cluster_identifier
+  cluster_identifier_prefix   = var.cluster_identifier_prefix
   engine                      = "neptune"
   engine_version              = var.engine_version
-  port                        = try(var.port, 8182)
-  storage_encrypted           = try(var.storage_encrypted, null)
-  storage_type                = try(var.storage_type, "standard")
-  deletion_protection         = try(var.deletion_protection, null)
-  apply_immediately           = try(var.apply_immediately, null)
-  allow_major_version_upgrade = try(var.allow_major_version_upgrade, null)
-  backup_retention_period     = try(var.backup_retention_period, null)
+  port                        = var.port
+  storage_encrypted           = var.storage_encrypted
+  storage_type                = var.storage_type
+  deletion_protection         = var.deletion_protection
+  apply_immediately           = var.apply_immediately
+  allow_major_version_upgrade = var.allow_major_version_upgrade
+  backup_retention_period     = var.backup_retention_period
 
   # Optional references
   neptune_cluster_parameter_group_name = try(aws_neptune_cluster_parameter_group.this[0].name, null)
-  neptune_subnet_group_name            = try(aws_neptune_subnet_group.this[0].name, null)
-  kms_key_arn                          = try(var.kms_key_arn, null)
-  iam_database_authentication_enabled  = try(var.iam_database_authentication_enabled, null)
+  neptune_subnet_group_name            = coalesce(try(aws_neptune_subnet_group.this[0].name, null), var.neptune_subnet_group_name)
+  kms_key_arn                          = var.kms_key_arn
+  iam_database_authentication_enabled  = var.iam_database_authentication_enabled
   iam_roles                            = try([aws_iam_role.this[0].arn], var.iam_roles)
-  availability_zones                   = try(var.availability_zones, null)
-  copy_tags_to_snapshot                = try(var.copy_tags_to_snapshot, null)
-  final_snapshot_identifier            = try(var.final_snapshot_identifier, null)
-  global_cluster_identifier            = try(var.global_cluster_identifier, null)
-  replication_source_identifier        = try(var.replication_source_identifier, null)
-  snapshot_identifier                  = try(var.snapshot_identifier, null)
-  preferred_backup_window              = try(var.preferred_backup_window, null)
-  preferred_maintenance_window         = try(var.preferred_maintenance_window, null)
+  availability_zones                   = var.availability_zones
+  copy_tags_to_snapshot                = var.copy_tags_to_snapshot
+  final_snapshot_identifier            = var.final_snapshot_identifier
+  global_cluster_identifier            = var.global_cluster_identifier
+  replication_source_identifier        = var.replication_source_identifier
+  snapshot_identifier                  = var.snapshot_identifier
+  preferred_backup_window              = var.preferred_backup_window
+  preferred_maintenance_window         = var.preferred_maintenance_window
 
   # CloudWatch logs
-  enable_cloudwatch_logs_exports = try(var.enable_cloudwatch_logs_exports, null)
+  enable_cloudwatch_logs_exports = var.enable_cloudwatch_logs_exports
 
   # Serverless configuration
   dynamic "serverless_v2_scaling_configuration" {
@@ -49,13 +49,16 @@ resource "aws_neptune_cluster" "this" {
     }
   }
 
-  # Skipping final snapshot if needed
-  skip_final_snapshot = try(var.skip_final_snapshot, null)
-
-  # Security groups
+  skip_final_snapshot    = var.skip_final_snapshot
   vpc_security_group_ids = try([aws_security_group.this[0].id], var.vpc_security_group_ids)
+  tags                   = var.tags
 
-  tags = try(var.tags, null)
+  lifecycle {
+    precondition {
+      condition     = var.create_neptune_subnet_group || var.neptune_subnet_group_name != null
+      error_message = "When create_neptune_subnet_group = false, neptune_subnet_group_name must be provided."
+    }
+  }
 }
 
 ######################
@@ -66,11 +69,11 @@ resource "aws_neptune_global_cluster" "this" {
   count = var.create_neptune_global_cluster ? 1 : 0
 
   global_cluster_identifier    = var.global_cluster_identifier
-  engine                       = try(var.global_cluster_engine, null)
-  engine_version               = try(var.global_cluster_engine_version, null)
-  deletion_protection          = try(var.global_cluster_deletion_protection, null)
-  source_db_cluster_identifier = try(var.global_cluster_source_db_cluster_identifier, null)
-  storage_encrypted            = try(var.global_cluster_storage_encrypted, null)
+  engine                       = var.global_cluster_engine
+  engine_version               = var.global_cluster_engine_version
+  deletion_protection          = var.global_cluster_deletion_protection
+  source_db_cluster_identifier = var.global_cluster_source_db_cluster_identifier
+  storage_encrypted            = var.global_cluster_storage_encrypted
 }
 
 ######################
@@ -83,12 +86,9 @@ resource "aws_neptune_cluster_instance" "primary" {
   cluster_identifier           = aws_neptune_cluster.this[0].cluster_identifier
   instance_class               = var.instance_class
   neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
-  neptune_subnet_group_name    = try(aws_neptune_subnet_group.this[0].name, null)
+  neptune_subnet_group_name    = coalesce(try(aws_neptune_subnet_group.this[0].name, null), var.neptune_subnet_group_name)
 
-  tags = merge(
-    try(var.tags, {}),
-    try(var.neptune_cluster_instance_tags, {})
-  )
+  tags = merge(var.tags, var.neptune_cluster_instance_tags)
 }
 
 ######################
@@ -96,17 +96,14 @@ resource "aws_neptune_cluster_instance" "primary" {
 ######################
 
 resource "aws_neptune_cluster_instance" "read_replicas" {
-  count = var.read_replica_count
+  count = var.create_neptune_instance ? var.read_replica_count : 0
 
   cluster_identifier           = aws_neptune_cluster.this[0].cluster_identifier
   instance_class               = var.instance_class
   neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
-  neptune_subnet_group_name    = try(aws_neptune_subnet_group.this[0].name, null)
+  neptune_subnet_group_name    = coalesce(try(aws_neptune_subnet_group.this[0].name, null), var.neptune_subnet_group_name)
 
-  tags = merge(
-    try(var.tags, {}),
-    try(var.neptune_cluster_instance_tags, {})
-  )
+  tags = merge(var.tags, var.neptune_cluster_instance_tags)
 }
 
 ######################
@@ -123,10 +120,9 @@ resource "aws_neptune_cluster_snapshot" "this" {
 
   db_cluster_snapshot_identifier = coalesce(
     var.db_cluster_snapshot_identifier,
-    format("%s-%s",
-      aws_neptune_cluster.this[0].id,
-      random_id.snapshot_suffix[0].hex
-    )
+    var.create_neptune_cluster
+    ? format("%s-%s", aws_neptune_cluster.this[0].id, random_id.snapshot_suffix[0].hex)
+    : null
   )
 
   dynamic "timeouts" {
@@ -144,7 +140,7 @@ resource "aws_neptune_cluster_snapshot" "this" {
 resource "aws_neptune_cluster_parameter_group" "this" {
   count = var.create_neptune_cluster_parameter_group ? 1 : 0
 
-  name        = "cluster-parameter-group-${var.cluster_identifier}"
+  name        = "cluster-parameter-group-${coalesce(var.cluster_identifier, var.cluster_identifier_prefix)}"
   description = "Neptune Cluster Parameter Group"
   family      = var.neptune_family
 
@@ -156,16 +152,13 @@ resource "aws_neptune_cluster_parameter_group" "this" {
     }
   }
 
-  tags = merge(
-    try(var.tags, {}),
-    try(var.neptune_cluster_parameter_group_tags, {})
-  )
+  tags = merge(var.tags, var.neptune_cluster_parameter_group_tags)
 }
 
 resource "aws_neptune_parameter_group" "this" {
   count = var.create_neptune_parameter_group ? 1 : 0
 
-  name        = "parameter-group-${var.cluster_identifier}"
+  name        = "parameter-group-${coalesce(var.cluster_identifier, var.cluster_identifier_prefix)}"
   description = "Neptune DB Parameter Group"
   family      = var.neptune_family
 
@@ -177,10 +170,7 @@ resource "aws_neptune_parameter_group" "this" {
     }
   }
 
-  tags = merge(
-    try(var.tags, {}),
-    try(var.neptune_parameter_group_tags, {})
-  )
+  tags = merge(var.tags, var.neptune_parameter_group_tags)
 }
 
 ######################
@@ -188,9 +178,10 @@ resource "aws_neptune_parameter_group" "this" {
 ######################
 
 locals {
+  subnet_ids_resolved = coalesce(var.subnet_ids, [])
   networking = {
-    final_ids = length(var.subnet_ids) > 0 ? (
-      var.subnet_ids
+    final_ids = length(local.subnet_ids_resolved) > 0 ? (
+      local.subnet_ids_resolved
       ) : (
       data.aws_subnets.filtered[0].ids
     )
@@ -198,7 +189,7 @@ locals {
 }
 
 data "aws_subnets" "filtered" {
-  count = length(var.subnet_ids) == 0 ? 1 : 0
+  count = length(local.subnet_ids_resolved) == 0 ? 1 : 0
 
   dynamic "filter" {
     for_each = var.subnet_name_filters
@@ -212,14 +203,22 @@ data "aws_subnets" "filtered" {
 resource "aws_neptune_subnet_group" "this" {
   count = var.create_neptune_subnet_group ? 1 : 0
 
-  name        = "subnet-group-${var.cluster_identifier}"
+  name        = "subnet-group-${coalesce(var.cluster_identifier, var.cluster_identifier_prefix)}"
   description = "Neptune Subnet Group"
   subnet_ids  = local.networking.final_ids
 
-  tags = merge(
-    try(var.tags, {}),
-    try(var.neptune_subnet_group_tags, {})
-  )
+  tags = merge(var.tags, var.neptune_subnet_group_tags)
+
+  lifecycle {
+    precondition {
+      condition     = length(local.subnet_ids_resolved) > 0 || length(var.subnet_name_filters) > 0
+      error_message = "You must provide either subnet_ids or subnet_name_filters to create a subnet group."
+    }
+    precondition {
+      condition     = !(length(local.subnet_ids_resolved) > 0 && length(var.subnet_name_filters) > 0)
+      error_message = "You must set either subnet_ids or subnet_name_filters, not both."
+    }
+  }
 }
 
 ######################
@@ -231,13 +230,13 @@ resource "aws_neptune_event_subscription" "this" {
 
   name          = each.key
   sns_topic_arn = each.value
-  source_type   = var.event_subscriptions != null ? "db-instance" : null
-  source_ids    = var.create_neptune_instance ? [aws_neptune_cluster_instance.primary[0].id] : []
-
-  tags = merge(
-    try(var.tags, {}),
-    try(var.neptune_event_subscription_tags, {})
+  source_type   = "db-instance"
+  source_ids = concat(
+    var.create_neptune_instance ? [aws_neptune_cluster_instance.primary[0].id] : [],
+    aws_neptune_cluster_instance.read_replicas[*].id
   )
+
+  tags = merge(var.tags, var.neptune_event_subscription_tags)
 }
 
 ######################
@@ -245,7 +244,7 @@ resource "aws_neptune_event_subscription" "this" {
 ######################
 
 resource "aws_neptune_cluster_endpoint" "this" {
-  for_each = var.create_neptune_cluster_endpoint ? { for idx, endpoint in var.neptune_cluster_endpoints : idx => endpoint } : {}
+  for_each = var.create_neptune_cluster_endpoint ? var.neptune_cluster_endpoints : {}
 
   cluster_identifier          = aws_neptune_cluster.this[0].cluster_identifier
   cluster_endpoint_identifier = each.key
@@ -263,7 +262,7 @@ resource "aws_neptune_cluster_endpoint" "this" {
 resource "aws_security_group" "this" {
   count = var.create_neptune_security_group ? 1 : 0
 
-  name        = "neptune-sg-${var.cluster_identifier}"
+  name        = "neptune-sg-${coalesce(var.cluster_identifier, var.cluster_identifier_prefix)}"
   description = "Neptune security group"
   vpc_id      = var.vpc_id
 
@@ -276,17 +275,14 @@ resource "aws_security_group" "this" {
   }
 
   egress {
-    description = "Outbound Neptune Traffic"
-    from_port   = var.neptune_port
-    to_port     = var.neptune_port
-    protocol    = "tcp"
-    cidr_blocks = var.neptune_subnet_cidrs
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(
-    try(var.tags, {}),
-    try(var.neptune_security_group_tags, {})
-  )
+  tags = merge(var.tags, var.neptune_security_group_tags)
 }
 
 ######################
@@ -297,9 +293,7 @@ data "aws_iam_policy_document" "this" {
   count = var.create_neptune_iam_role ? 1 : 0
 
   statement {
-    actions = [
-      "sts:AssumeRole",
-    ]
+    actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"
@@ -316,21 +310,15 @@ resource "aws_iam_role" "this" {
   description          = var.neptune_role_description
   permissions_boundary = var.neptune_role_permissions_boundary
 
-  tags = merge(
-    {
-      "Name" = format("%s", var.neptune_role_name)
-    },
-    try(var.tags, {}),
-  )
+  tags = merge({ "Name" = var.neptune_role_name }, var.tags)
 }
 
 resource "aws_iam_role_policy_attachment" "this" {
-  count = var.create_neptune_iam_role ? 1 : 0
+  for_each = var.create_neptune_iam_role ? toset(var.iam_role_policies) : toset([])
 
   role       = aws_iam_role.this[0].name
-  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/ROSAKMSProviderPolicy"
+  policy_arn = each.value
 }
-
 
 ######################
 # Random ID
