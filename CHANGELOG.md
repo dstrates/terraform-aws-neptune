@@ -1,4 +1,14 @@
-# v0.2.0 (Tue May 06 2025)
+# Changelog
+
+## [0.3.0](https://github.com/dstrates/terraform-aws-neptune/compare/v0.2.0...v0.3.0) (2026-03-12)
+
+
+### Features
+
+* add support for `publicly_accessible` on Neptune instances ([#52](https://github.com/dstrates/terraform-aws-neptune/issues/52)) ([fbf72f4](https://github.com/dstrates/terraform-aws-neptune/commit/fbf72f494404be60c8f3953929aaae93535863b9))
+* bug fixes and non-breaking improvements ([#47](https://github.com/dstrates/terraform-aws-neptune/issues/47)) ([1766274](https://github.com/dstrates/terraform-aws-neptune/commit/176627447dc03045f7cd5b9c22c2d08e6156189a))
+
+## v0.2.0 (Tue May 06 2025)
 
 #### 🚀 Enhancement
 
@@ -10,7 +20,7 @@
 
 ---
 
-# v0.1.4 (Tue May 06 2025)
+## v0.1.4 (Tue May 06 2025)
 
 #### 🐛 Bug Fix
 
@@ -33,7 +43,7 @@
 
 ---
 
-# v0.1.3 (Mon Jan 06 2025)
+## v0.1.3 (Mon Jan 06 2025)
 
 #### 🐛 Bug Fix
 
@@ -46,7 +56,7 @@
 
 ---
 
-# v0.1.2 (Mon Jan 06 2025)
+## v0.1.2 (Mon Jan 06 2025)
 
 #### 🐛 Bug Fix
 
@@ -58,7 +68,7 @@
 
 ---
 
-# v0.1.1 (Fri Jan 03 2025)
+## v0.1.1 (Fri Jan 03 2025)
 
 #### 🐛 Bug Fix
 
@@ -75,7 +85,7 @@
 
 ---
 
-# v0.1.0 (Sat Dec 14 2024)
+## v0.1.0 (Sat Dec 14 2024)
 
 #### 🚀 Enhancement
 
