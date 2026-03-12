@@ -25,7 +25,8 @@ module "neptune" {
   min_capacity                           = 2.5
   preferred_backup_window                = "07:00-09:00"
   preferred_maintenance_window           = "sun:06:00-sun:10:00"
-  skip_final_snapshot                    = true
+  deletion_protection                    = false # dev environment
+  skip_final_snapshot                    = true  # dev environment
   subnet_ids                             = data.aws_subnets.db.ids
 
   # Restrict Neptune ingress to application security group (preferred) or CIDRs

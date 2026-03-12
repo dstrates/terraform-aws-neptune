@@ -121,7 +121,7 @@ variable "db_cluster_snapshot_identifier" {
 variable "deletion_protection" {
   type        = bool
   description = "(Optional) A value that indicates whether the DB cluster has deletion protection enabled"
-  default     = false
+  default     = true
 }
 
 variable "enable_cloudwatch_logs_exports" {
@@ -370,7 +370,7 @@ variable "neptune_security_group_tags" {
 variable "neptune_subnet_cidrs" {
   description = "CIDR blocks allowed to reach the Neptune port. Used for the ingress rule on the managed security group."
   type        = list(string)
-  default     = ["10.0.0.0/8"]
+  default     = []
 }
 
 variable "neptune_subnet_group_name" {
@@ -424,7 +424,7 @@ variable "replication_source_identifier" {
 variable "skip_final_snapshot" {
   description = "Determines whether a final Neptune snapshot is created before deletion"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "snapshot_identifier" {

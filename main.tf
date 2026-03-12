@@ -58,6 +58,10 @@ resource "aws_neptune_cluster" "this" {
       condition     = !var.enable_serverless || var.instance_class == "db.serverless"
       error_message = "Serverless clusters must use instance_class = \"db.serverless\"."
     }
+    precondition {
+      condition     = var.skip_final_snapshot || var.final_snapshot_identifier != null
+      error_message = "When skip_final_snapshot = false, you must provide final_snapshot_identifier."
+    }
   }
 }
 
@@ -214,7 +218,8 @@ locals {
       length(data.aws_subnets.filtered) > 0 ? data.aws_subnets.filtered[0].ids : []
     )
   }
-  name_prefix = coalesce(var.cluster_identifier, var.cluster_identifier_prefix, "neptune")
+  name_prefix   = coalesce(var.cluster_identifier, var.cluster_identifier_prefix, "neptune")
+  ingress_cidrs = var.publicly_accessible ? concat(var.neptune_subnet_cidrs, var.public_cidr_blocks) : var.neptune_subnet_cidrs
 }
 
 data "aws_subnets" "filtered" {
@@ -311,8 +316,8 @@ resource "aws_security_group" "this" {
     from_port       = var.port
     to_port         = var.port
     protocol        = "tcp"
-    cidr_blocks     = var.publicly_accessible ? concat(var.neptune_subnet_cidrs, var.public_cidr_blocks) : var.neptune_subnet_cidrs
-    security_groups = var.ingress_security_group_ids
+    cidr_blocks     = length(local.ingress_cidrs) > 0 ? local.ingress_cidrs : null
+    security_groups = length(var.ingress_security_group_ids) > 0 ? var.ingress_security_group_ids : null
   }
 
   dynamic "egress" {
@@ -328,6 +333,13 @@ resource "aws_security_group" "this" {
   }
 
   tags = merge(var.tags, var.neptune_security_group_tags)
+
+  lifecycle {
+    precondition {
+      condition     = length(var.neptune_subnet_cidrs) > 0 || length(var.ingress_security_group_ids) > 0
+      error_message = "You must provide at least one of neptune_subnet_cidrs or ingress_security_group_ids to define ingress rules."
+    }
+  }
 }
 
 ######################
