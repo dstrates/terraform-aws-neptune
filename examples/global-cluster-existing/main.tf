@@ -102,7 +102,7 @@ module "neptune_global_cluster" {
   global_cluster_engine                       = "neptune"
   global_cluster_engine_version               = "1.4.7.0"
   global_cluster_identifier                   = "my-global-neptune-cluster"
-  global_cluster_source_db_cluster_identifier = module.neptune_existing_cluster.aws_neptune_cluster_arn
+  global_cluster_source_db_cluster_identifier = module.neptune_existing_cluster.neptune_cluster_arn
 }
 
 ########################################

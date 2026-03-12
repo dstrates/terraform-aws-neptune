@@ -83,6 +83,7 @@ resource "aws_neptune_global_cluster" "this" {
 resource "aws_neptune_cluster_instance" "primary" {
   count = var.create_neptune_instance ? 1 : 0
 
+  identifier                   = var.instance_identifier
   cluster_identifier           = aws_neptune_cluster.this[0].cluster_identifier
   instance_class               = var.instance_class
   neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
@@ -110,6 +111,7 @@ resource "aws_neptune_cluster_instance" "primary" {
 resource "aws_neptune_cluster_instance" "read_replicas" {
   count = var.create_neptune_instance ? var.read_replica_count : 0
 
+  identifier                   = var.replica_identifier_prefix != null ? "${var.replica_identifier_prefix}-${count.index}" : null
   cluster_identifier           = aws_neptune_cluster.this[0].cluster_identifier
   instance_class               = var.instance_class
   neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
@@ -305,19 +307,24 @@ resource "aws_security_group" "this" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "Inbound Neptune Traffic"
-    from_port   = var.neptune_port
-    to_port     = var.neptune_port
-    protocol    = "tcp"
-    cidr_blocks = var.publicly_accessible ? concat(var.neptune_subnet_cidrs, var.public_cidr_blocks) : var.neptune_subnet_cidrs
+    description     = "Inbound Neptune Traffic"
+    from_port       = var.port
+    to_port         = var.port
+    protocol        = "tcp"
+    cidr_blocks     = var.publicly_accessible ? concat(var.neptune_subnet_cidrs, var.public_cidr_blocks) : var.neptune_subnet_cidrs
+    security_groups = var.ingress_security_group_ids
   }
 
-  egress {
-    description = "Outbound Neptune Traffic"
-    from_port   = var.neptune_port
-    to_port     = var.neptune_port
-    protocol    = "tcp"
-    cidr_blocks = var.publicly_accessible ? concat(var.neptune_subnet_cidrs, var.public_cidr_blocks) : var.neptune_subnet_cidrs
+  dynamic "egress" {
+    for_each = var.security_group_egress_rules
+    content {
+      description     = egress.value.description
+      from_port       = egress.value.from_port
+      to_port         = egress.value.to_port
+      protocol        = egress.value.protocol
+      cidr_blocks     = egress.value.cidr_blocks
+      security_groups = egress.value.security_groups
+    }
   }
 
   tags = merge(var.tags, var.neptune_security_group_tags)

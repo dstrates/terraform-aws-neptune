@@ -216,6 +216,12 @@ variable "iam_roles" {
   default     = null
 }
 
+variable "instance_identifier" {
+  description = "(Optional) The identifier for the primary Neptune cluster instance. If omitted, Terraform will assign a random, unique identifier."
+  type        = string
+  default     = null
+}
+
 variable "instance_class" {
   description = "The instance class to use for the Neptune instances (e.g., db.r5.large, db.serverless)."
   type        = string
@@ -309,10 +315,10 @@ variable "neptune_parameter_group_tags" {
   default     = {}
 }
 
-variable "neptune_port" {
-  description = "Network port for the Neptune DB Cluster"
-  type        = number
-  default     = 8182
+variable "ingress_security_group_ids" {
+  description = "(Optional) List of security group IDs allowed inbound access to Neptune. Used in addition to cidr_blocks on the managed security group."
+  type        = list(string)
+  default     = []
 }
 
 variable "neptune_role_name" {
@@ -331,6 +337,28 @@ variable "neptune_role_permissions_boundary" {
   description = "ARN of the policy that is used to set the permissions boundary for the Neptune IAM role"
   type        = string
   default     = null
+}
+
+variable "security_group_egress_rules" {
+  description = "List of egress rules for the Neptune security group. Defaults to allowing HTTPS (443) outbound to 0.0.0.0/0."
+  type = list(object({
+    description     = string
+    from_port       = number
+    to_port         = number
+    protocol        = string
+    cidr_blocks     = optional(list(string), null)
+    security_groups = optional(list(string), null)
+  }))
+  default = [
+    {
+      description     = "HTTPS outbound for AWS service connectivity"
+      from_port       = 443
+      to_port         = 443
+      protocol        = "tcp"
+      cidr_blocks     = ["0.0.0.0/0"]
+      security_groups = null
+    }
+  ]
 }
 
 variable "neptune_security_group_tags" {
@@ -379,6 +407,12 @@ variable "read_replica_count" {
   description = "Number of read replicas to create."
   type        = number
   default     = 0
+}
+
+variable "replica_identifier_prefix" {
+  description = "(Optional) A prefix for read replica identifiers. Replicas will be named '<prefix>-0', '<prefix>-1', etc. If omitted, Terraform will assign random, unique identifiers."
+  type        = string
+  default     = null
 }
 
 variable "replication_source_identifier" {
