@@ -30,3 +30,71 @@ terraform.rc
 
 # Lambda directories
 builds/
+
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go build artifacts
+bin/
+build/
+dist/
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Coverage reports
+coverage.out
+*.coverprofile
+cover.out
+
+# Test binary
+*.test
+
+# Go module vendor directory (optional)
+vendor/
+
+# Dependency tooling
+Godeps/
+.glide/
+vendor/
+
+# Go tools
+*.pprof
+*.trace
+
+# Temporary files
+tmp/
+*.tmp
+*.temp
+
+# IDEs / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Generated docs
+docs/
+
+# Local tooling
+.air.toml
+.reflex.conf
