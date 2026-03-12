@@ -96,6 +96,10 @@ resource "aws_neptune_cluster_instance" "primary" {
       condition     = var.create_neptune_cluster
       error_message = "create_neptune_instance requires create_neptune_cluster = true."
     }
+    precondition {
+      condition     = var.publicly_accessible || var.create_neptune_subnet_group || var.neptune_subnet_group_name != null
+      error_message = "neptune_subnet_group_name is required on cluster instances when publicly_accessible = false. Set create_neptune_subnet_group = true or provide neptune_subnet_group_name."
+    }
   }
 }
 
@@ -118,6 +122,10 @@ resource "aws_neptune_cluster_instance" "read_replicas" {
     precondition {
       condition     = var.create_neptune_cluster
       error_message = "create_neptune_instance requires create_neptune_cluster = true."
+    }
+    precondition {
+      condition     = var.publicly_accessible || var.create_neptune_subnet_group || var.neptune_subnet_group_name != null
+      error_message = "neptune_subnet_group_name is required on cluster instances when publicly_accessible = false. Set create_neptune_subnet_group = true or provide neptune_subnet_group_name."
     }
   }
 }

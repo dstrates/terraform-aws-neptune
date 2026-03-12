@@ -33,6 +33,11 @@ module "neptune" {
   create_neptune_cluster_snapshot = var.create_neptune_cluster_snapshot
   skip_final_snapshot             = true
 
+  publicly_accessible = var.publicly_accessible
+  public_cidr_blocks  = var.public_cidr_blocks
+
+  create_neptune_subnet_group = var.create_neptune_subnet_group
+
   storage_encrypted = var.storage_encrypted
   storage_type      = var.storage_type
 
