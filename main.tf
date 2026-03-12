@@ -1,7 +1,3 @@
-data "aws_region" "current" {}
-data "aws_partition" "current" {}
-data "aws_caller_identity" "current" {}
-
 ######################
 # Neptune cluster
 ######################
@@ -27,7 +23,7 @@ resource "aws_neptune_cluster" "this" {
   neptune_subnet_group_name            = coalesce(try(aws_neptune_subnet_group.this[0].name, null), var.neptune_subnet_group_name)
   kms_key_arn                          = var.kms_key_arn
   iam_database_authentication_enabled  = var.iam_database_authentication_enabled
-  iam_roles                            = try([aws_iam_role.this[0].arn], var.iam_roles)
+  iam_roles                            = var.create_neptune_iam_role ? concat([aws_iam_role.this[0].arn], coalesce(var.iam_roles, [])) : var.iam_roles
   availability_zones                   = var.availability_zones
   copy_tags_to_snapshot                = var.copy_tags_to_snapshot
   final_snapshot_identifier            = var.final_snapshot_identifier
@@ -50,13 +46,17 @@ resource "aws_neptune_cluster" "this" {
   }
 
   skip_final_snapshot    = var.skip_final_snapshot
-  vpc_security_group_ids = try([aws_security_group.this[0].id], var.vpc_security_group_ids)
+  vpc_security_group_ids = var.create_neptune_security_group ? concat([aws_security_group.this[0].id], coalesce(var.vpc_security_group_ids, [])) : var.vpc_security_group_ids
   tags                   = var.tags
 
   lifecycle {
     precondition {
       condition     = var.create_neptune_subnet_group || var.neptune_subnet_group_name != null
       error_message = "When create_neptune_subnet_group = false, neptune_subnet_group_name must be provided."
+    }
+    precondition {
+      condition     = !var.enable_serverless || var.instance_class == "db.serverless"
+      error_message = "Serverless clusters must use instance_class = \"db.serverless\"."
     }
   }
 }
@@ -89,6 +89,13 @@ resource "aws_neptune_cluster_instance" "primary" {
   neptune_subnet_group_name    = coalesce(try(aws_neptune_subnet_group.this[0].name, null), var.neptune_subnet_group_name)
 
   tags = merge(var.tags, var.neptune_cluster_instance_tags)
+
+  lifecycle {
+    precondition {
+      condition     = var.create_neptune_cluster
+      error_message = "create_neptune_instance requires create_neptune_cluster = true."
+    }
+  }
 }
 
 ######################
@@ -104,6 +111,13 @@ resource "aws_neptune_cluster_instance" "read_replicas" {
   neptune_subnet_group_name    = coalesce(try(aws_neptune_subnet_group.this[0].name, null), var.neptune_subnet_group_name)
 
   tags = merge(var.tags, var.neptune_cluster_instance_tags)
+
+  lifecycle {
+    precondition {
+      condition     = var.create_neptune_cluster
+      error_message = "create_neptune_instance requires create_neptune_cluster = true."
+    }
+  }
 }
 
 ######################
@@ -118,12 +132,14 @@ resource "aws_neptune_cluster_snapshot" "this" {
     : var.db_cluster_identifier
   )
 
-  db_cluster_snapshot_identifier = coalesce(
-    var.db_cluster_snapshot_identifier,
-    var.create_neptune_cluster
-    ? format("%s-%s", aws_neptune_cluster.this[0].id, random_id.snapshot_suffix[0].hex)
-    : null
-  )
+  db_cluster_snapshot_identifier = var.create_neptune_cluster ? coalesce(var.db_cluster_snapshot_identifier, format("%s-%s", aws_neptune_cluster.this[0].id, random_id.snapshot_suffix[0].hex)) : var.db_cluster_snapshot_identifier
+
+  lifecycle {
+    precondition {
+      condition     = var.create_neptune_cluster || var.db_cluster_snapshot_identifier != null
+      error_message = "When create_neptune_cluster = false, db_cluster_snapshot_identifier must be provided."
+    }
+  }
 
   dynamic "timeouts" {
     for_each = var.db_cluster_identifier != null ? [1] : []
@@ -140,7 +156,7 @@ resource "aws_neptune_cluster_snapshot" "this" {
 resource "aws_neptune_cluster_parameter_group" "this" {
   count = var.create_neptune_cluster_parameter_group ? 1 : 0
 
-  name        = "cluster-parameter-group-${coalesce(var.cluster_identifier, var.cluster_identifier_prefix)}"
+  name        = "cluster-parameter-group-${local.name_prefix}"
   description = "Neptune Cluster Parameter Group"
   family      = var.neptune_family
 
@@ -158,7 +174,7 @@ resource "aws_neptune_cluster_parameter_group" "this" {
 resource "aws_neptune_parameter_group" "this" {
   count = var.create_neptune_parameter_group ? 1 : 0
 
-  name        = "parameter-group-${coalesce(var.cluster_identifier, var.cluster_identifier_prefix)}"
+  name        = "parameter-group-${local.name_prefix}"
   description = "Neptune DB Parameter Group"
   family      = var.neptune_family
 
@@ -183,13 +199,14 @@ locals {
     final_ids = length(local.subnet_ids_resolved) > 0 ? (
       local.subnet_ids_resolved
       ) : (
-      data.aws_subnets.filtered[0].ids
+      length(data.aws_subnets.filtered) > 0 ? data.aws_subnets.filtered[0].ids : []
     )
   }
+  name_prefix = coalesce(var.cluster_identifier, var.cluster_identifier_prefix, "neptune")
 }
 
 data "aws_subnets" "filtered" {
-  count = length(local.subnet_ids_resolved) == 0 ? 1 : 0
+  count = length(local.subnet_ids_resolved) == 0 && length(var.subnet_name_filters) > 0 ? 1 : 0
 
   dynamic "filter" {
     for_each = var.subnet_name_filters
@@ -203,7 +220,7 @@ data "aws_subnets" "filtered" {
 resource "aws_neptune_subnet_group" "this" {
   count = var.create_neptune_subnet_group ? 1 : 0
 
-  name        = "subnet-group-${coalesce(var.cluster_identifier, var.cluster_identifier_prefix)}"
+  name        = "subnet-group-${local.name_prefix}"
   description = "Neptune Subnet Group"
   subnet_ids  = local.networking.final_ids
 
@@ -225,16 +242,20 @@ resource "aws_neptune_subnet_group" "this" {
 # Event subscriptions
 ######################
 
+locals {
+  event_subscription_source_ids = concat(
+    var.create_neptune_instance ? [aws_neptune_cluster_instance.primary[0].id] : [],
+    aws_neptune_cluster_instance.read_replicas[*].id
+  )
+}
+
 resource "aws_neptune_event_subscription" "this" {
-  for_each = var.event_subscriptions != null ? var.event_subscriptions : {}
+  for_each = var.event_subscriptions != null && length(local.event_subscription_source_ids) > 0 ? var.event_subscriptions : {}
 
   name          = each.key
   sns_topic_arn = each.value
   source_type   = "db-instance"
-  source_ids = concat(
-    var.create_neptune_instance ? [aws_neptune_cluster_instance.primary[0].id] : [],
-    aws_neptune_cluster_instance.read_replicas[*].id
-  )
+  source_ids    = local.event_subscription_source_ids
 
   tags = merge(var.tags, var.neptune_event_subscription_tags)
 }
@@ -253,6 +274,13 @@ resource "aws_neptune_cluster_endpoint" "this" {
   static_members   = each.value.static_members
   excluded_members = each.value.excluded_members
   tags             = each.value.tags
+
+  lifecycle {
+    precondition {
+      condition     = var.create_neptune_cluster
+      error_message = "create_neptune_cluster_endpoint requires create_neptune_cluster = true."
+    }
+  }
 }
 
 ######################
@@ -262,7 +290,7 @@ resource "aws_neptune_cluster_endpoint" "this" {
 resource "aws_security_group" "this" {
   count = var.create_neptune_security_group ? 1 : 0
 
-  name        = "neptune-sg-${coalesce(var.cluster_identifier, var.cluster_identifier_prefix)}"
+  name        = "neptune-sg-${local.name_prefix}"
   description = "Neptune security group"
   vpc_id      = var.vpc_id
 
@@ -297,7 +325,7 @@ data "aws_iam_policy_document" "this" {
 
     principals {
       type        = "Service"
-      identifiers = ["rds.amazonaws.com"]
+      identifiers = ["neptune.amazonaws.com"]
     }
   }
 }
