@@ -139,7 +139,7 @@ variable "enable_serverless" {
 variable "engine_version" {
   description = "The database engine version. When enable_serverless = true, must be 1.2.0.1 or above."
   type        = string
-  default     = "1.4.7.0"
+  default     = "1.2.0.1"
 }
 
 variable "event_subscriptions" {
