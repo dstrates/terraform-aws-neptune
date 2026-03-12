@@ -25,3 +25,14 @@ data "aws_subnets" "db" {
     values = [data.aws_vpc.this.id]
   }
 }
+
+data "aws_security_group" "app" {
+  filter {
+    name   = "tag:Name"
+    values = ["my-app-sg"]
+  }
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.this.id]
+  }
+}

@@ -96,7 +96,7 @@ data "aws_kms_key" "secondary" {
 
 module "neptune_primary" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.3"
+  version = "0.3.0"
 
   providers = {
     aws = aws.primary
@@ -107,7 +107,7 @@ module "neptune_primary" {
   create_neptune_subnet_group            = true
   create_neptune_cluster_parameter_group = true
   create_neptune_instance                = true
-  engine_version                         = "1.2.0.1"
+  engine_version                         = "1.4.7.0"
   apply_immediately                      = true
   backup_retention_period                = 5
   skip_final_snapshot                    = true
@@ -118,6 +118,7 @@ module "neptune_primary" {
   max_capacity                           = 128
   subnet_ids                             = data.aws_subnets.primary_db.ids
   instance_class                         = "db.serverless"
+  neptune_subnet_cidrs                   = [data.aws_vpc.primary.cidr_block]
 
   neptune_cluster_parameters = {
     audit = {
@@ -145,7 +146,7 @@ module "neptune_primary" {
 
 module "neptune_replica" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.3"
+  version = "0.3.0"
 
   providers = {
     aws = aws.secondary
@@ -157,9 +158,9 @@ module "neptune_replica" {
   create_neptune_cluster_parameter_group = false
   create_neptune_parameter_group         = false
 
-  replication_source_identifier       = module.neptune_primary.aws_neptune_cluster_arn
+  replication_source_identifier       = module.neptune_primary.neptune_cluster_arn
   cluster_identifier                  = "replica-neptune-cluster"
-  engine_version                      = "1.2.0.1"
+  engine_version                      = "1.4.7.0"
   apply_immediately                   = true
   skip_final_snapshot                 = true
   iam_database_authentication_enabled = true
@@ -168,7 +169,8 @@ module "neptune_replica" {
   min_capacity                        = 2.5
   max_capacity                        = 128
   subnet_ids                          = data.aws_subnets.secondary_db.ids
-  instance_class                      = "db.serverless"
+  instance_class                      = "db.serverless" # Neptune Serverless supported instance class is db.serverless
+  neptune_subnet_cidrs                = [data.aws_vpc.secondary.cidr_block]
 
   tags = {
     Name        = "replica-neptune"
@@ -181,17 +183,17 @@ module "neptune_replica" {
 ########################################
 
 output "primary_neptune_cluster_endpoint" {
-  value = module.neptune_primary.aws_neptune_cluster_endpoint
+  value = module.neptune_primary.neptune_cluster_endpoint
 }
 
 output "primary_neptune_cluster_id" {
-  value = module.neptune_primary.aws_neptune_cluster_id
+  value = module.neptune_primary.neptune_cluster_id
 }
 
 output "replica_neptune_cluster_endpoint" {
-  value = module.neptune_replica.aws_neptune_cluster_endpoint
+  value = module.neptune_replica.neptune_cluster_endpoint
 }
 
 output "replica_neptune_cluster_id" {
-  value = module.neptune_replica.aws_neptune_cluster_id
+  value = module.neptune_replica.neptune_cluster_id
 }

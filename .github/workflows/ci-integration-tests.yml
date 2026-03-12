@@ -1,0 +1,47 @@
+name: Integration Tests
+run-name: Integration Tests by @${{ github.actor }} ${{ github.sha }}
+
+on:
+  workflow_dispatch:
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC credential vending
+
+    strategy:
+      # Run test functions in parallel across matrix entries. Each entry maps
+      # to a single -run pattern so tests get isolated Terraform state and can
+      # be retried or cancelled independently.
+      fail-fast: false
+      matrix:
+        test:
+          - TestNeptuneServerlessCluster
+          - TestNeptuneReadReplicas
+          - TestNeptuneNoInstanceCreated
+          - TestNeptuneNoIAMRole
+          - TestNeptuneTagsApplied
+          - TestNeptuneClusterSnapshot
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version-file: test/go.mod
+          cache-dependency-path: test/go.sum
+
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Run ${{ matrix.test }}
+        working-directory: test
+        run: go test -v -run "${{ matrix.test }}$" -timeout 60m

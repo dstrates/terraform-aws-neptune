@@ -53,13 +53,13 @@ data "aws_kms_key" "default" {
 # Assuming you have an existing standard Neptune cluster
 module "neptune_existing_cluster" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.3"
+  version = "0.3.0"
 
   create_neptune_cluster                 = true
   create_neptune_subnet_group            = true
   create_neptune_cluster_parameter_group = true
   create_neptune_instance                = true
-  engine_version                         = "1.2.0.1"
+  engine_version                         = "1.4.7.0"
   apply_immediately                      = true
   backup_retention_period                = 5
   skip_final_snapshot                    = true
@@ -71,6 +71,7 @@ module "neptune_existing_cluster" {
   subnet_ids                             = data.aws_subnets.db_subnets.ids
   cluster_identifier                     = "existing-neptune-cluster"
   instance_class                         = "db.serverless"
+  neptune_subnet_cidrs                   = [data.aws_vpc.this.cidr_block]
 
   neptune_cluster_parameters = {
     audit = {
@@ -95,11 +96,11 @@ module "neptune_existing_cluster" {
 # Create a global cluster referencing that cluster
 module "neptune_global_cluster" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.3"
+  version = "0.3.0"
 
   create_neptune_global_cluster               = true
   global_cluster_engine                       = "neptune"
-  global_cluster_engine_version               = "1.2.0.1"
+  global_cluster_engine_version               = "1.4.7.0"
   global_cluster_identifier                   = "my-global-neptune-cluster"
   global_cluster_source_db_cluster_identifier = module.neptune_existing_cluster.aws_neptune_cluster_arn
 }
@@ -110,15 +111,15 @@ module "neptune_global_cluster" {
 
 output "existing_cluster_id" {
   description = "ID of the existing Neptune cluster"
-  value       = module.neptune_existing_cluster.aws_neptune_cluster_id
+  value       = module.neptune_existing_cluster.neptune_cluster_id
 }
 
 output "existing_cluster_endpoint" {
   description = "Endpoint of the existing Neptune cluster"
-  value       = module.neptune_existing_cluster.aws_neptune_cluster_endpoint
+  value       = module.neptune_existing_cluster.neptune_cluster_endpoint
 }
 
 output "global_cluster_id" {
   description = "ID of the newly created global Neptune cluster"
-  value       = aws_neptune_global_cluster.this.id
+  value       = module.neptune_global_cluster.neptune_global_cluster_id
 }
