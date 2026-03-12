@@ -1,38 +1,24 @@
 name: Release
+run-name: Release by @${{ github.actor }} ${{ github.sha }}
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-    paths:
-      - "**.tf"
-      - "!examples/**"
 
 concurrency:
   group: release
   cancel-in-progress: false
 
-run-name: Release by @${{ github.actor }} ${{ github.sha }}
-
 jobs:
-  release:
+  release-please:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # to be able to publish a GitHub release
-      issues: write # to be able to comment on released issues
-      pull-requests: write # to be able to comment on released pull requests
-    if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
+      contents: write
+      pull-requests: write
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
+      - uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
         with:
-          fetch-depth: 0
-
-      - name: Set up Auto
-        uses: auto-it/setup-auto@v1
-        with:
-          gh-token: ${{ secrets.GH_TOKEN }}
-
-      - name: Release
-        run: auto shipit
+          config-file: .github/release-please-config.json
+          manifest-file: .github/release-please-manifest.json

@@ -20,15 +20,15 @@ jobs:
     name: Terraform CI
     permissions:
       pull-requests: write
-      contents: write
+      contents: read
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.ref || github.ref }}
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
 
       - name: Terraform Format
         id: fmt
@@ -44,7 +44,7 @@ jobs:
         run: terraform validate -no-color
 
       - name: Terraform Docs
-        uses: terraform-docs/gh-actions@v1.4.1
+        uses: terraform-docs/gh-actions@6de6da0cefcc6b4b7a5cbea4d79d97060733093c # v1.4.1
         with:
           working-dir: .
           output-file: README.md
