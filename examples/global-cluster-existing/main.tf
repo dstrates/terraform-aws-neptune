@@ -59,7 +59,7 @@ module "neptune_existing_cluster" {
   create_neptune_subnet_group            = true
   create_neptune_cluster_parameter_group = true
   create_neptune_instance                = true
-  engine_version                         = "1.2.0.1"
+  engine_version                         = "1.4.7.0"
   apply_immediately                      = true
   backup_retention_period                = 5
   skip_final_snapshot                    = true
@@ -100,7 +100,7 @@ module "neptune_global_cluster" {
 
   create_neptune_global_cluster               = true
   global_cluster_engine                       = "neptune"
-  global_cluster_engine_version               = "1.2.0.1"
+  global_cluster_engine_version               = "1.4.7.0"
   global_cluster_identifier                   = "my-global-neptune-cluster"
   global_cluster_source_db_cluster_identifier = module.neptune_existing_cluster.aws_neptune_cluster_arn
 }

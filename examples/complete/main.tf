@@ -17,9 +17,9 @@ module "neptune" {
   create_neptune_security_group          = true
   create_neptune_subnet_group            = true
   enable_serverless                      = false
-  engine_version                         = "1.2.0.1"
+  engine_version                         = "1.4.7.0"
   iam_database_authentication_enabled    = true
-  instance_class                         = "db.r5.large"
+  instance_class                         = "db.r5.large" # Neptune Serverless supported instance class is db.serverless
   kms_key_arn                            = data.aws_kms_key.default.arn
   max_capacity                           = 128
   min_capacity                           = 2.5

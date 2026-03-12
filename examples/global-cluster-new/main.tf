@@ -107,7 +107,7 @@ module "neptune_global_primary" {
   create_neptune_global_cluster = true
   global_cluster_identifier     = "global-neptune-db"
   global_cluster_engine         = "neptune"
-  global_cluster_engine_version = "1.2.0.1"
+  global_cluster_engine_version = "1.4.7.0"
 
   # Primary Cluster Configuration
   create_neptune_cluster                 = true
@@ -115,7 +115,7 @@ module "neptune_global_primary" {
   create_neptune_cluster_parameter_group = true
   create_neptune_instance                = true
   enable_serverless                      = true
-  engine_version                         = "1.2.0.1"
+  engine_version                         = "1.4.7.0"
   iam_database_authentication_enabled    = true
   apply_immediately                      = true
   backup_retention_period                = 5
@@ -128,7 +128,7 @@ module "neptune_global_primary" {
   max_capacity                           = 128
   subnet_ids                             = data.aws_subnets.primary_db.ids
   cluster_identifier                     = "neptune-db-primary-use1"
-  instance_class                         = "db.serverless"
+  instance_class                         = "db.serverless" # Neptune Serverless supported instance class is db.serverless
   neptune_subnet_cidrs                   = [data.aws_vpc.primary.cidr_block]
 
   neptune_cluster_parameters = {
@@ -180,7 +180,7 @@ module "neptune_global_secondary" {
   # Just ensure the global_cluster_identifier above matches the primary's global cluster.
 
   # For a global cluster secondary, engine version and other settings must match primary
-  engine_version                      = "1.2.0.1"
+  engine_version                      = "1.4.7.0"
   enable_serverless                   = true
   iam_database_authentication_enabled = true
   apply_immediately                   = true

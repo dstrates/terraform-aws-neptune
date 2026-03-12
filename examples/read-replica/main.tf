@@ -107,7 +107,7 @@ module "neptune_primary" {
   create_neptune_subnet_group            = true
   create_neptune_cluster_parameter_group = true
   create_neptune_instance                = true
-  engine_version                         = "1.2.0.1"
+  engine_version                         = "1.4.7.0"
   apply_immediately                      = true
   backup_retention_period                = 5
   skip_final_snapshot                    = true
@@ -160,7 +160,7 @@ module "neptune_replica" {
 
   replication_source_identifier       = module.neptune_primary.neptune_cluster_arn
   cluster_identifier                  = "replica-neptune-cluster"
-  engine_version                      = "1.2.0.1"
+  engine_version                      = "1.4.7.0"
   apply_immediately                   = true
   skip_final_snapshot                 = true
   iam_database_authentication_enabled = true
@@ -169,7 +169,7 @@ module "neptune_replica" {
   min_capacity                        = 2.5
   max_capacity                        = 128
   subnet_ids                          = data.aws_subnets.secondary_db.ids
-  instance_class                      = "db.serverless"
+  instance_class                      = "db.serverless" # Neptune Serverless supported instance class is db.serverless
   neptune_subnet_cidrs                = [data.aws_vpc.secondary.cidr_block]
 
   tags = {
