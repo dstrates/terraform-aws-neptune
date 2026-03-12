@@ -1,6 +1,6 @@
 module "neptune" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.2"
+  version = "0.3.0"
 
   apply_immediately                      = true
   backup_retention_period                = 5
@@ -17,9 +17,9 @@ module "neptune" {
   create_neptune_security_group          = true
   create_neptune_subnet_group            = true
   enable_serverless                      = false
-  engine_version                         = "1.2.0.0" # Neptune Serverless supported version is 1.2.0.1
+  engine_version                         = "1.2.0.1"
   iam_database_authentication_enabled    = true
-  instance_class                         = "db.r5.large" # Neptune Serverless supported instance class is db.serverless
+  instance_class                         = "db.r5.large"
   kms_key_arn                            = data.aws_kms_key.default.arn
   max_capacity                           = 128
   min_capacity                           = 2.5
@@ -27,6 +27,9 @@ module "neptune" {
   preferred_maintenance_window           = "sun:06:00-sun:10:00"
   skip_final_snapshot                    = true
   subnet_ids                             = data.aws_subnets.db.ids
+
+  # Restrict Neptune ingress to application security group (preferred) or CIDRs
+  ingress_security_group_ids = [data.aws_security_group.app.id]
 
   neptune_cluster_parameters = {
     parameter1 = {

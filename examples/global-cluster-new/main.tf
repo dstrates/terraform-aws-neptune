@@ -97,7 +97,7 @@ data "aws_kms_key" "secondary" {
 
 module "neptune_global_primary" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.2"
+  version = "0.3.0"
 
   providers = {
     aws = aws.primary
@@ -129,6 +129,7 @@ module "neptune_global_primary" {
   subnet_ids                             = data.aws_subnets.primary_db.ids
   cluster_identifier                     = "neptune-db-primary-use1"
   instance_class                         = "db.serverless"
+  neptune_subnet_cidrs                   = [data.aws_vpc.primary.cidr_block]
 
   neptune_cluster_parameters = {
     audit = {
@@ -156,7 +157,7 @@ module "neptune_global_primary" {
 
 module "neptune_global_secondary" {
   source  = "dstrates/neptune/aws"
-  version = "0.1.2"
+  version = "0.3.0"
 
   providers = {
     aws = aws.secondary
@@ -190,6 +191,7 @@ module "neptune_global_secondary" {
   subnet_ids                          = data.aws_subnets.secondary_db.ids
   cluster_identifier                  = "neptune-db-secondary-usw2"
   instance_class                      = "db.serverless"
+  neptune_subnet_cidrs                = [data.aws_vpc.secondary.cidr_block]
 
   tags = {
     Name        = "global-secondary-neptune"
@@ -203,12 +205,12 @@ module "neptune_global_secondary" {
 
 output "primary_neptune_cluster_endpoint" {
   description = "Endpoint of the primary Neptune cluster"
-  value       = module.neptune_global_primary.aws_neptune_cluster_endpoint
+  value       = module.neptune_global_primary.neptune_cluster_endpoint
 }
 
 output "primary_neptune_cluster_id" {
   description = "ID of the primary Neptune cluster"
-  value       = module.neptune_global_primary.aws_neptune_cluster_id
+  value       = module.neptune_global_primary.neptune_cluster_id
 }
 
 output "global_cluster_id" {
@@ -218,10 +220,10 @@ output "global_cluster_id" {
 
 output "secondary_neptune_cluster_endpoint" {
   description = "Endpoint of the secondary Neptune cluster"
-  value       = module.neptune_global_secondary.aws_neptune_cluster_endpoint
+  value       = module.neptune_global_secondary.neptune_cluster_endpoint
 }
 
 output "secondary_neptune_cluster_id" {
   description = "ID of the secondary Neptune cluster"
-  value       = module.neptune_global_secondary.aws_neptune_cluster_id
+  value       = module.neptune_global_secondary.neptune_cluster_id
 }
