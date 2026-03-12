@@ -1,0 +1,38 @@
+repos:
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.105.0
+    hooks:
+      - id: terraform_fmt
+        exclude: ^examples/
+      - id: terraform_validate
+        args:
+          - --hook-config=--retry-once-with-cleanup=true
+        exclude: ^examples/
+      - id: terraform_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+        exclude: ^examples/
+
+  - repo: local
+    hooks:
+      - id: trivy-config
+        name: Trivy IaC scan
+        language: system
+        entry: trivy config
+        args:
+          - --severity=HIGH,CRITICAL
+          - --exit-code=1
+          - --skip-dirs=examples/complete
+          - --skip-dirs=examples/global-cluster-existing
+          - --skip-dirs=examples/global-cluster-new
+          - --skip-dirs=examples/read-replica
+          - .
+        pass_filenames: false
+        always_run: true
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict

@@ -303,11 +303,11 @@ resource "aws_security_group" "this" {
   }
 
   egress {
-    description = "Allow all outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    description = "Outbound Neptune Traffic"
+    from_port   = var.neptune_port
+    to_port     = var.neptune_port
+    protocol    = "tcp"
+    cidr_blocks = var.neptune_subnet_cidrs
   }
 
   tags = merge(var.tags, var.neptune_security_group_tags)
