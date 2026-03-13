@@ -123,7 +123,8 @@ type assumeRolePolicyDocument struct {
 }
 
 // assertNeptuneTrustPolicy fetches the IAM role's trust policy and asserts that
-// neptune.amazonaws.com is listed as a principal.
+// rds.amazonaws.com is listed as a principal. Neptune uses the RDS service
+// principal.
 //
 // IAM is eventually consistent, the assertion is retried up to five times with
 // a back-off to tolerate propagation delays.
@@ -151,36 +152,24 @@ func assertNeptuneTrustPolicy(t *testing.T, roleName, region string) {
 			return "", fmt.Errorf("parse trust policy JSON: %w", err)
 		}
 
-		foundNeptune := false
 		foundRDS := false
 		for _, stmt := range doc.Statement {
 			switch v := stmt.Principal.Service.(type) {
 			case string:
-				if v == "neptune.amazonaws.com" {
-					foundNeptune = true
-				}
 				if v == "rds.amazonaws.com" {
 					foundRDS = true
 				}
 			case []interface{}:
 				for _, s := range v {
-					if str, ok := s.(string); ok {
-						if str == "neptune.amazonaws.com" {
-							foundNeptune = true
-						}
-						if str == "rds.amazonaws.com" {
-							foundRDS = true
-						}
+					if str, ok := s.(string); ok && str == "rds.amazonaws.com" {
+						foundRDS = true
 					}
 				}
 			}
 		}
 
-		if !foundNeptune {
-			return "", fmt.Errorf("IAM trust policy does not yet include neptune.amazonaws.com")
-		}
-		if foundRDS {
-			return "", fmt.Errorf("IAM trust policy unexpectedly includes rds.amazonaws.com")
+		if !foundRDS {
+			return "", fmt.Errorf("IAM trust policy does not yet include rds.amazonaws.com")
 		}
 		return "ok", nil
 	})
