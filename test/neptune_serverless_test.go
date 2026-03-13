@@ -179,6 +179,7 @@ func TestNeptuneDisabledResources(t *testing.T) {
 			"suffix":                  suffix,
 			"subnet_ids":              vpc.SubnetIDs,
 			"vpc_id":                  vpc.VPCID,
+			"neptune_subnet_cidrs":    []string{vpc.VPCCIDR},
 			"engine_version":          "1.4.7.0",
 			"enable_serverless":       true,
 			"instance_class":          "db.serverless",
@@ -243,6 +244,7 @@ func TestNeptuneValidation_ServerlessMismatch(t *testing.T) {
 			"aws_region":                      "us-east-1",
 			"aws_skip_credentials_validation": true,
 			"subnet_ids":                      []string{"subnet-00000000"},
+			"neptune_subnet_cidrs":            []string{"10.0.0.0/8"},
 			"engine_version":                  "1.4.7.0",
 			"enable_serverless":               true,
 			"instance_class":                  "db.r5.large", // invalid with enable_serverless=true
@@ -279,6 +281,7 @@ func TestNeptuneValidation_MissingSubnetConfig(t *testing.T) {
 			"aws_region":                      "us-east-1",
 			"aws_skip_credentials_validation": true,
 			"subnet_ids":                      []string{}, // empty — should trigger precondition
+			"neptune_subnet_cidrs":            []string{"10.0.0.0/8"},
 			"engine_version":                  "1.4.7.0",
 			"enable_serverless":               true,
 			"instance_class":                  "db.serverless",
@@ -311,6 +314,7 @@ func TestNeptuneValidation_PublicWithoutSubnet(t *testing.T) {
 			"aws_region":                      "us-east-1",
 			"aws_skip_credentials_validation": true,
 			"subnet_ids":                      []string{"subnet-00000000"},
+			"neptune_subnet_cidrs":            []string{"10.0.0.0/8"},
 			"engine_version":                  "1.4.7.0",
 			"enable_serverless":               true,
 			"instance_class":                  "db.serverless",

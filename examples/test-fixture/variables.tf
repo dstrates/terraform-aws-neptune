@@ -29,7 +29,7 @@ variable "vpc_id" {
 variable "neptune_subnet_cidrs" {
   description = "CIDR blocks allowed to reach the Neptune port."
   type        = list(string)
-  default     = ["10.0.0.0/8"]
+  default     = []
 }
 
 variable "create_neptune_security_group" {

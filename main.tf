@@ -58,6 +58,10 @@ resource "aws_neptune_cluster" "this" {
       condition     = !var.enable_serverless || var.instance_class == "db.serverless"
       error_message = "Serverless clusters must use instance_class = \"db.serverless\"."
     }
+    precondition {
+      condition     = var.skip_final_snapshot || var.final_snapshot_identifier != null
+      error_message = "When skip_final_snapshot = false, you must provide final_snapshot_identifier."
+    }
   }
 }
 
@@ -83,6 +87,7 @@ resource "aws_neptune_global_cluster" "this" {
 resource "aws_neptune_cluster_instance" "primary" {
   count = var.create_neptune_instance ? 1 : 0
 
+  identifier                   = var.instance_identifier
   cluster_identifier           = aws_neptune_cluster.this[0].cluster_identifier
   instance_class               = var.instance_class
   neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
@@ -110,6 +115,7 @@ resource "aws_neptune_cluster_instance" "primary" {
 resource "aws_neptune_cluster_instance" "read_replicas" {
   count = var.create_neptune_instance ? var.read_replica_count : 0
 
+  identifier                   = var.replica_identifier_prefix != null ? "${var.replica_identifier_prefix}-${count.index}" : null
   cluster_identifier           = aws_neptune_cluster.this[0].cluster_identifier
   instance_class               = var.instance_class
   neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
@@ -212,7 +218,8 @@ locals {
       length(data.aws_subnets.filtered) > 0 ? data.aws_subnets.filtered[0].ids : []
     )
   }
-  name_prefix = coalesce(var.cluster_identifier, var.cluster_identifier_prefix, "neptune")
+  name_prefix   = coalesce(var.cluster_identifier, var.cluster_identifier_prefix, "neptune")
+  ingress_cidrs = var.publicly_accessible ? concat(var.neptune_subnet_cidrs, var.public_cidr_blocks) : var.neptune_subnet_cidrs
 }
 
 data "aws_subnets" "filtered" {
@@ -305,22 +312,34 @@ resource "aws_security_group" "this" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "Inbound Neptune Traffic"
-    from_port   = var.neptune_port
-    to_port     = var.neptune_port
-    protocol    = "tcp"
-    cidr_blocks = var.publicly_accessible ? concat(var.neptune_subnet_cidrs, var.public_cidr_blocks) : var.neptune_subnet_cidrs
+    description     = "Inbound Neptune Traffic"
+    from_port       = var.port
+    to_port         = var.port
+    protocol        = "tcp"
+    cidr_blocks     = length(local.ingress_cidrs) > 0 ? local.ingress_cidrs : null
+    security_groups = length(var.ingress_security_group_ids) > 0 ? var.ingress_security_group_ids : null
   }
 
-  egress {
-    description = "Outbound Neptune Traffic"
-    from_port   = var.neptune_port
-    to_port     = var.neptune_port
-    protocol    = "tcp"
-    cidr_blocks = var.publicly_accessible ? concat(var.neptune_subnet_cidrs, var.public_cidr_blocks) : var.neptune_subnet_cidrs
+  dynamic "egress" {
+    for_each = var.security_group_egress_rules
+    content {
+      description     = egress.value.description
+      from_port       = egress.value.from_port
+      to_port         = egress.value.to_port
+      protocol        = egress.value.protocol
+      cidr_blocks     = egress.value.cidr_blocks
+      security_groups = egress.value.security_groups
+    }
   }
 
   tags = merge(var.tags, var.neptune_security_group_tags)
+
+  lifecycle {
+    precondition {
+      condition     = length(var.neptune_subnet_cidrs) > 0 || length(var.ingress_security_group_ids) > 0
+      error_message = "You must provide at least one of neptune_subnet_cidrs or ingress_security_group_ids to define ingress rules."
+    }
+  }
 }
 
 ######################

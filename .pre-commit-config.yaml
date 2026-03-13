@@ -4,6 +4,8 @@ repos:
     hooks:
       - id: terraform_fmt
         exclude: ^examples/
+      - id: terraform_docs
+        exclude: ^examples/
       - id: terraform_validate
         args:
           - --hook-config=--retry-once-with-cleanup=true

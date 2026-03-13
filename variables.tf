@@ -121,7 +121,7 @@ variable "db_cluster_snapshot_identifier" {
 variable "deletion_protection" {
   type        = bool
   description = "(Optional) A value that indicates whether the DB cluster has deletion protection enabled"
-  default     = false
+  default     = true
 }
 
 variable "enable_cloudwatch_logs_exports" {
@@ -213,6 +213,12 @@ variable "iam_role_policies" {
 variable "iam_roles" {
   description = "(Optional) A List of ARNs for the IAM roles to associate to the Neptune Cluster"
   type        = list(string)
+  default     = null
+}
+
+variable "instance_identifier" {
+  description = "(Optional) The identifier for the primary Neptune cluster instance. If omitted, Terraform will assign a random, unique identifier."
+  type        = string
   default     = null
 }
 
@@ -309,10 +315,10 @@ variable "neptune_parameter_group_tags" {
   default     = {}
 }
 
-variable "neptune_port" {
-  description = "Network port for the Neptune DB Cluster"
-  type        = number
-  default     = 8182
+variable "ingress_security_group_ids" {
+  description = "(Optional) List of security group IDs allowed inbound access to Neptune. Used in addition to cidr_blocks on the managed security group."
+  type        = list(string)
+  default     = []
 }
 
 variable "neptune_role_name" {
@@ -333,6 +339,28 @@ variable "neptune_role_permissions_boundary" {
   default     = null
 }
 
+variable "security_group_egress_rules" {
+  description = "List of egress rules for the Neptune security group. Defaults to allowing HTTPS (443) outbound to 0.0.0.0/0."
+  type = list(object({
+    description     = string
+    from_port       = number
+    to_port         = number
+    protocol        = string
+    cidr_blocks     = optional(list(string), null)
+    security_groups = optional(list(string), null)
+  }))
+  default = [
+    {
+      description     = "HTTPS outbound for AWS service connectivity"
+      from_port       = 443
+      to_port         = 443
+      protocol        = "tcp"
+      cidr_blocks     = ["0.0.0.0/0"]
+      security_groups = null
+    }
+  ]
+}
+
 variable "neptune_security_group_tags" {
   description = "Tags for the Neptune security group"
   type        = map(string)
@@ -342,7 +370,7 @@ variable "neptune_security_group_tags" {
 variable "neptune_subnet_cidrs" {
   description = "CIDR blocks allowed to reach the Neptune port. Used for the ingress rule on the managed security group."
   type        = list(string)
-  default     = ["10.0.0.0/8"]
+  default     = []
 }
 
 variable "neptune_subnet_group_name" {
@@ -381,6 +409,12 @@ variable "read_replica_count" {
   default     = 0
 }
 
+variable "replica_identifier_prefix" {
+  description = "(Optional) A prefix for read replica identifiers. Replicas will be named '<prefix>-0', '<prefix>-1', etc. If omitted, Terraform will assign random, unique identifiers."
+  type        = string
+  default     = null
+}
+
 variable "replication_source_identifier" {
   description = "(Optional) ARN of a source Neptune cluster or Neptune instance if this Neptune cluster is to be created as a Read Replica."
   type        = string
@@ -390,7 +424,7 @@ variable "replication_source_identifier" {
 variable "skip_final_snapshot" {
   description = "Determines whether a final Neptune snapshot is created before deletion"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "snapshot_identifier" {
