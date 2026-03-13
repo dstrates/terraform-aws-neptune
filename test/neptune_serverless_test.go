@@ -19,12 +19,11 @@ func infraTestsEnabled() bool {
 }
 
 // TestNeptuneServerlessCluster deploys a minimal serverless Neptune cluster and
-// asserts that all managed resources are created with the expected configuration.
+// asserts that all managed resources are created with the expected
+// configuration.
 //
 // Requires: AWS credentials with permissions to create Neptune, IAM, EC2, and
 // random provider resources.
-//
-// Run with: RUN_ACC_TESTS=true go test -v -run TestNeptuneServerlessCluster -timeout 60m
 func TestNeptuneServerlessCluster(t *testing.T) {
 	if !infraTestsEnabled() {
 		t.Skip("skipping acceptance test; set RUN_ACC_TESTS=true to run")
@@ -39,6 +38,11 @@ func TestNeptuneServerlessCluster(t *testing.T) {
 
 	vpc := resolveVPCConfig(t, region)
 
+	expectedTags := map[string]string{
+		"Environment": "test",
+		"Owner":       "terratest",
+	}
+
 	opts := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
 		TerraformDir: "../examples/test-fixture",
 		Vars: map[string]interface{}{
@@ -52,15 +56,15 @@ func TestNeptuneServerlessCluster(t *testing.T) {
 			"min_capacity":                           minCapacity,
 			"max_capacity":                           maxCapacity,
 			"create_neptune_instance":                true,
+			"read_replica_count":                     2,
 			"create_neptune_iam_role":                true,
 			"create_neptune_cluster_parameter_group": true,
 			"create_neptune_parameter_group":         true,
 			"neptune_family":                         "neptune1.4",
 			"storage_encrypted":                      true,
 			"backup_retention_period":                1,
-			"tags": map[string]string{
-				"Test": "TestNeptuneServerlessCluster",
-			},
+			"create_neptune_cluster_snapshot":        true,
+			"tags":                                   expectedTags,
 		},
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": region,
@@ -73,8 +77,6 @@ func TestNeptuneServerlessCluster(t *testing.T) {
 	// ── Cluster outputs ──────────────────────────────────────────────────────
 
 	clusterIDOut := terraform.Output(t, opts, "neptune_cluster_id")
-	// Assert the suffix is present rather than requiring exact equality. This
-	// is resilient to module-level naming changes that preserve uniqueness.
 	require.Contains(t, clusterIDOut, suffix, "cluster ID should contain the test suffix")
 
 	clusterARN := terraform.Output(t, opts, "neptune_cluster_arn")
@@ -95,11 +97,17 @@ func TestNeptuneServerlessCluster(t *testing.T) {
 	primaryInstanceID := terraform.Output(t, opts, "neptune_primary_instance_id")
 	require.NotEmpty(t, primaryInstanceID, "primary instance ID should be set")
 
-	replicaIDs := terraform.OutputList(t, opts, "neptune_read_replica_ids")
-	require.Empty(t, replicaIDs, "no read replicas expected with read_replica_count=0")
-
 	publiclyAccessible := terraform.Output(t, opts, "neptune_primary_instance_publicly_accessible")
 	require.Equal(t, "false", publiclyAccessible, "primary instance should not be publicly accessible by default")
+
+	// ── Read replicas ────────────────────────────────────────────────────────
+
+	replicaIDs := terraform.OutputList(t, opts, "neptune_read_replica_ids")
+	require.Len(t, replicaIDs, 2, "expected exactly 2 read replica instances")
+
+	for _, id := range replicaIDs {
+		require.NotEqual(t, primaryInstanceID, id, "replica ID must differ from primary ID")
+	}
 
 	// ── IAM role ─────────────────────────────────────────────────────────────
 
@@ -136,115 +144,26 @@ func TestNeptuneServerlessCluster(t *testing.T) {
 	assertSecurityGroupRules(t, sgID, vpc.VPCCIDR, region)
 	assertServerlessScalingConfig(t, clusterIDOut, region, minCapacity, maxCapacity)
 	assertClusterEncryption(t, clusterIDOut, region)
-}
 
-// TestNeptuneReadReplicas deploys a cluster with two read replicas and verifies
-// the correct number of instances is created.
-//
-// Run with: RUN_ACC_TESTS=true go test -v -run TestNeptuneReadReplicas -timeout
-// 60m
-func TestNeptuneReadReplicas(t *testing.T) {
-	if !infraTestsEnabled() {
-		t.Skip("skipping acceptance test; set RUN_ACC_TESTS=true to run")
+	// ── Tags ─────────────────────────────────────────────────────────────────
+
+	actualTags := getTagsForNeptuneCluster(t, clusterARN, region)
+	for k, v := range expectedTags {
+		require.Equal(t, v, actualTags[k], "tag %q should have value %q", k, v)
 	}
 
-	const region = "us-east-1"
-	suffix := strings.ToLower(random.UniqueId())
+	// ── Snapshot ─────────────────────────────────────────────────────────────
 
-	vpc := resolveVPCConfig(t, region)
-
-	opts := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../examples/test-fixture",
-		Vars: map[string]interface{}{
-			"suffix":                  suffix,
-			"subnet_ids":              vpc.SubnetIDs,
-			"vpc_id":                  vpc.VPCID,
-			"neptune_subnet_cidrs":    []string{vpc.VPCCIDR},
-			"engine_version":          "1.4.7.0",
-			"enable_serverless":       true,
-			"instance_class":          "db.serverless",
-			"min_capacity":            2.5,
-			"max_capacity":            8,
-			"create_neptune_instance": true,
-			"read_replica_count":      2,
-			"neptune_family":          "neptune1.4",
-			"storage_encrypted":       true,
-			"backup_retention_period": 1,
-		},
-		EnvVars: map[string]string{
-			"AWS_DEFAULT_REGION": region,
-		},
-	})
-
-	defer terraform.Destroy(t, opts)
-	terraform.InitAndApply(t, opts)
-
-	replicaIDs := terraform.OutputList(t, opts, "neptune_read_replica_ids")
-	require.Len(t, replicaIDs, 2, "expected exactly 2 read replica instances")
-
-	primaryInstanceID := terraform.Output(t, opts, "neptune_primary_instance_id")
-	require.NotEmpty(t, primaryInstanceID, "primary instance should still be created")
-
-	for _, id := range replicaIDs {
-		require.NotEqual(t, primaryInstanceID, id, "replica ID must differ from primary ID")
-	}
+	snapshotID := terraform.Output(t, opts, "neptune_cluster_snapshot_identifier")
+	require.NotEmpty(t, snapshotID, "snapshot identifier should be set")
+	require.Contains(t, snapshotID, clusterIDOut,
+		"snapshot identifier %q should contain cluster ID %q", snapshotID, clusterIDOut)
 }
 
-// TestNeptuneNoInstanceCreated validates that create_neptune_instance=false
-// results in no instance resources while the cluster is still created.
-//
-// Run with: RUN_ACC_TESTS=true go test -v -run TestNeptuneNoInstanceCreated
-// -timeout 45m
-func TestNeptuneNoInstanceCreated(t *testing.T) {
-	if !infraTestsEnabled() {
-		t.Skip("skipping acceptance test; set RUN_ACC_TESTS=true to run")
-	}
-
-	const region = "us-east-1"
-	suffix := strings.ToLower(random.UniqueId())
-
-	vpc := resolveVPCConfig(t, region)
-
-	opts := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../examples/test-fixture",
-		Vars: map[string]interface{}{
-			"suffix":                  suffix,
-			"subnet_ids":              vpc.SubnetIDs,
-			"vpc_id":                  vpc.VPCID,
-			"engine_version":          "1.4.7.0",
-			"enable_serverless":       true,
-			"instance_class":          "db.serverless",
-			"create_neptune_instance": false,
-			"neptune_family":          "neptune1.4",
-			"storage_encrypted":       true,
-			"backup_retention_period": 1,
-		},
-		EnvVars: map[string]string{
-			"AWS_DEFAULT_REGION": region,
-		},
-	})
-
-	defer terraform.Destroy(t, opts)
-	terraform.InitAndApply(t, opts)
-
-	// Cluster should still be created
-	clusterID := terraform.Output(t, opts, "neptune_cluster_id")
-	require.NotEmpty(t, clusterID, "cluster should be created even without instances")
-
-	// Instance outputs must be empty
-	primaryInstanceID := terraform.Output(t, opts, "neptune_primary_instance_id")
-	require.Empty(t, primaryInstanceID, "primary instance should not be created")
-
-	replicaIDs := terraform.OutputList(t, opts, "neptune_read_replica_ids")
-	require.Empty(t, replicaIDs, "no replicas should be created")
-}
-
-// TestNeptuneNoIAMRole validates that create_neptune_iam_role=false produces no
-// IAM role output.
-//
-// Run with: RUN_ACC_TESTS=true go test -v -run TestNeptuneNoIAMRole -timeout
-// 45m
-func TestNeptuneNoIAMRole(t *testing.T) {
+// TestNeptuneDisabledResources deploys a minimal cluster with instances and IAM
+// role disabled, and verifies those outputs are empty while the cluster itself
+// is still created.
+func TestNeptuneDisabledResources(t *testing.T) {
 	if !infraTestsEnabled() {
 		t.Skip("skipping acceptance test; set RUN_ACC_TESTS=true to run")
 	}
@@ -277,107 +196,20 @@ func TestNeptuneNoIAMRole(t *testing.T) {
 	defer terraform.Destroy(t, opts)
 	terraform.InitAndApply(t, opts)
 
+	// Cluster should still be created
+	clusterID := terraform.Output(t, opts, "neptune_cluster_id")
+	require.NotEmpty(t, clusterID, "cluster should be created even with instances and IAM disabled")
+
+	// Instance outputs must be empty
+	primaryInstanceID := terraform.Output(t, opts, "neptune_primary_instance_id")
+	require.Empty(t, primaryInstanceID, "primary instance should not be created")
+
+	replicaIDs := terraform.OutputList(t, opts, "neptune_read_replica_ids")
+	require.Empty(t, replicaIDs, "no replicas should be created")
+
+	// IAM role must be empty
 	iamRoleARN := terraform.Output(t, opts, "neptune_iam_role_arn")
 	require.Empty(t, iamRoleARN, "IAM role ARN should be empty when create_neptune_iam_role=false")
-}
-
-// TestNeptuneTagsApplied verifies that caller-supplied tags appear on the
-// cluster.
-//
-// Run with: RUN_ACC_TESTS=true go test -v -run TestNeptuneTagsApplied -timeout
-// 45m
-func TestNeptuneTagsApplied(t *testing.T) {
-	if !infraTestsEnabled() {
-		t.Skip("skipping acceptance test; set RUN_ACC_TESTS=true to run")
-	}
-
-	const region = "us-east-1"
-	suffix := strings.ToLower(random.UniqueId())
-
-	vpc := resolveVPCConfig(t, region)
-	expectedTags := map[string]string{
-		"Environment": "test",
-		"Owner":       "terratest",
-	}
-
-	opts := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../examples/test-fixture",
-		Vars: map[string]interface{}{
-			"suffix":                  suffix,
-			"subnet_ids":              vpc.SubnetIDs,
-			"vpc_id":                  vpc.VPCID,
-			"engine_version":          "1.4.7.0",
-			"enable_serverless":       true,
-			"instance_class":          "db.serverless",
-			"create_neptune_instance": false,
-			"neptune_family":          "neptune1.4",
-			"storage_encrypted":       true,
-			"backup_retention_period": 1,
-			"tags":                    expectedTags,
-		},
-		EnvVars: map[string]string{
-			"AWS_DEFAULT_REGION": region,
-		},
-	})
-
-	defer terraform.Destroy(t, opts)
-	terraform.InitAndApply(t, opts)
-
-	clusterARN := terraform.Output(t, opts, "neptune_cluster_arn")
-	require.NotEmpty(t, clusterARN)
-
-	actualTags := getTagsForNeptuneCluster(t, clusterARN, region)
-	for k, v := range expectedTags {
-		require.Equal(t, v, actualTags[k], "tag %q should have value %q", k, v)
-	}
-}
-
-// TestNeptuneClusterSnapshot validates that a snapshot is created and its
-// identifier contains the cluster ID.
-//
-// Run with: RUN_ACC_TESTS=true go test -v -run TestNeptuneClusterSnapshot
-// -timeout 60m
-func TestNeptuneClusterSnapshot(t *testing.T) {
-	if !infraTestsEnabled() {
-		t.Skip("skipping acceptance test; set RUN_ACC_TESTS=true to run")
-	}
-
-	const region = "us-east-1"
-	suffix := strings.ToLower(random.UniqueId())
-
-	vpc := resolveVPCConfig(t, region)
-
-	opts := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../examples/test-fixture",
-		Vars: map[string]interface{}{
-			"suffix":                          suffix,
-			"subnet_ids":                      vpc.SubnetIDs,
-			"vpc_id":                          vpc.VPCID,
-			"engine_version":                  "1.4.7.0",
-			"enable_serverless":               true,
-			"instance_class":                  "db.serverless",
-			"create_neptune_instance":         false,
-			"neptune_family":                  "neptune1.4",
-			"storage_encrypted":               true,
-			"backup_retention_period":         1,
-			"create_neptune_cluster_snapshot": true,
-		},
-		EnvVars: map[string]string{
-			"AWS_DEFAULT_REGION": region,
-		},
-	})
-
-	defer terraform.Destroy(t, opts)
-	terraform.InitAndApply(t, opts)
-
-	clusterIDOut := terraform.Output(t, opts, "neptune_cluster_id")
-
-	snapshotID := terraform.Output(t, opts, "neptune_cluster_snapshot_identifier")
-	require.NotEmpty(t, snapshotID, "snapshot identifier should be set")
-	// Use Contains rather than HasPrefix so the assertion holds if the module
-	// ever changes its naming scheme while keeping the cluster ID embedded.
-	require.Contains(t, snapshotID, clusterIDOut,
-		"snapshot identifier %q should contain cluster ID %q", snapshotID, clusterIDOut)
 }
 
 // copyModuleRootToTemp copies the entire module repository root to a temp
