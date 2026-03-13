@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/dstrates/terraform-aws-neptune/compare/v0.3.0...v0.3.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* use rds.amazonaws.com as IAM service principal for Neptune ([#54](https://github.com/dstrates/terraform-aws-neptune/issues/54)) ([2e566c4](https://github.com/dstrates/terraform-aws-neptune/commit/2e566c43e8817d60de141382e773d1f5ca9688aa))
+
 ## [0.3.0](https://github.com/dstrates/terraform-aws-neptune/compare/v0.2.0...v0.3.0) (2026-03-12)
 
 
