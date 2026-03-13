@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/dstrates/terraform-aws-neptune/compare/v0.3.1...v0.4.0) (2026-03-13)
+
+
+### Features
+
+* improve flexibility and update variable defaults ([#53](https://github.com/dstrates/terraform-aws-neptune/issues/53)) ([05be48d](https://github.com/dstrates/terraform-aws-neptune/commit/05be48d5d5730317713fd81d73636d127d83fe4b))
+
 ## [0.3.1](https://github.com/dstrates/terraform-aws-neptune/compare/v0.3.0...v0.3.1) (2026-03-13)
 
 
