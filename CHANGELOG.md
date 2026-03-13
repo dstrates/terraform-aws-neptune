@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.5.0](https://github.com/dstrates/terraform-aws-neptune/compare/v0.4.0...v0.5.0) (2026-03-13)
+
+
+### Features
+
+* add support for `publicly_accessible` on Neptune instances ([#52](https://github.com/dstrates/terraform-aws-neptune/issues/52)) ([fbf72f4](https://github.com/dstrates/terraform-aws-neptune/commit/fbf72f494404be60c8f3953929aaae93535863b9))
+* add support for global and read-replica clusters ([#4](https://github.com/dstrates/terraform-aws-neptune/issues/4)) ([65fd7c6](https://github.com/dstrates/terraform-aws-neptune/commit/65fd7c6ba87bb4b68b4bbabeffad16b8128c64d6))
+* allow existing subnets to be filtered by tag ([#31](https://github.com/dstrates/terraform-aws-neptune/issues/31)) ([f9b0465](https://github.com/dstrates/terraform-aws-neptune/commit/f9b046510f7809062fc62e2544d1414e1712dbe6))
+* bug fixes and non-breaking improvements ([#47](https://github.com/dstrates/terraform-aws-neptune/issues/47)) ([1766274](https://github.com/dstrates/terraform-aws-neptune/commit/176627447dc03045f7cd5b9c22c2d08e6156189a))
+* improve flexibility and update variable defaults ([#53](https://github.com/dstrates/terraform-aws-neptune/issues/53)) ([05be48d](https://github.com/dstrates/terraform-aws-neptune/commit/05be48d5d5730317713fd81d73636d127d83fe4b))
+
+
+### Bug Fixes
+
+* add count guard to random suffix resource ([#30](https://github.com/dstrates/terraform-aws-neptune/issues/30)) ([880cbb9](https://github.com/dstrates/terraform-aws-neptune/commit/880cbb99251b3f444bce45418e2d2fe359571b7e))
+* add outputs and make args optional ([#14](https://github.com/dstrates/terraform-aws-neptune/issues/14)) ([4659501](https://github.com/dstrates/terraform-aws-neptune/commit/4659501a9b728a72496f1cb3efa3b8c33ea88cab))
+* make `cluster_identifier` optional for use with global clusters ([#19](https://github.com/dstrates/terraform-aws-neptune/issues/19)) ([39307ee](https://github.com/dstrates/terraform-aws-neptune/commit/39307eec314a7139a07e716dd224c70350b5990f))
+* resolve self-referential cluster instance snapshot ([#17](https://github.com/dstrates/terraform-aws-neptune/issues/17)) ([022baa0](https://github.com/dstrates/terraform-aws-neptune/commit/022baa0254bc6b141dd775a7c90640d1d9a3535f))
+* update outputs and fix cluster IAM role reference ([#8](https://github.com/dstrates/terraform-aws-neptune/issues/8)) ([7029e2e](https://github.com/dstrates/terraform-aws-neptune/commit/7029e2e1ca20183171e382563dfb6fca9576774d))
+* use rds.amazonaws.com as IAM service principal for Neptune ([#54](https://github.com/dstrates/terraform-aws-neptune/issues/54)) ([2e566c4](https://github.com/dstrates/terraform-aws-neptune/commit/2e566c43e8817d60de141382e773d1f5ca9688aa))
+
 ## [0.4.0](https://github.com/dstrates/terraform-aws-neptune/compare/v0.3.1...v0.4.0) (2026-03-13)
 
 
