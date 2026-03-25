@@ -323,12 +323,14 @@ resource "aws_security_group" "this" {
   dynamic "egress" {
     for_each = var.security_group_egress_rules
     content {
-      description     = egress.value.description
-      from_port       = egress.value.from_port
-      to_port         = egress.value.to_port
-      protocol        = egress.value.protocol
-      cidr_blocks     = egress.value.cidr_blocks
-      security_groups = egress.value.security_groups
+      description      = egress.value.description
+      from_port        = egress.value.from_port
+      to_port          = egress.value.to_port
+      protocol         = egress.value.protocol
+      cidr_blocks      = egress.value.cidr_blocks
+      security_groups  = egress.value.security_groups
+      prefix_list_ids  = egress.value.prefix_list_ids
+      ipv6_cidr_blocks = egress.value.ipv6_cidr_blocks
     }
   }
 
