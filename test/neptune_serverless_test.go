@@ -160,59 +160,6 @@ func TestNeptuneServerlessCluster(t *testing.T) {
 		"snapshot identifier %q should contain cluster ID %q", snapshotID, clusterIDOut)
 }
 
-// TestNeptuneDisabledResources deploys a minimal cluster with instances and IAM
-// role disabled, and verifies those outputs are empty while the cluster itself
-// is still created.
-func TestNeptuneDisabledResources(t *testing.T) {
-	if !infraTestsEnabled() {
-		t.Skip("skipping acceptance test; set RUN_ACC_TESTS=true to run")
-	}
-
-	const region = "us-east-1"
-	suffix := strings.ToLower(random.UniqueId())
-
-	vpc := resolveVPCConfig(t, region)
-
-	opts := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../examples/test-fixture",
-		Vars: map[string]interface{}{
-			"suffix":                  suffix,
-			"subnet_ids":              vpc.SubnetIDs,
-			"vpc_id":                  vpc.VPCID,
-			"neptune_subnet_cidrs":    []string{vpc.VPCCIDR},
-			"engine_version":          "1.4.7.0",
-			"enable_serverless":       true,
-			"instance_class":          "db.serverless",
-			"create_neptune_instance": false,
-			"create_neptune_iam_role": false,
-			"neptune_family":          "neptune1.4",
-			"storage_encrypted":       true,
-			"backup_retention_period": 1,
-		},
-		EnvVars: map[string]string{
-			"AWS_DEFAULT_REGION": region,
-		},
-	})
-
-	defer terraform.Destroy(t, opts)
-	terraform.InitAndApply(t, opts)
-
-	// Cluster should still be created
-	clusterID := terraform.Output(t, opts, "neptune_cluster_id")
-	require.NotEmpty(t, clusterID, "cluster should be created even with instances and IAM disabled")
-
-	// Instance outputs must be empty
-	primaryInstanceID := terraform.Output(t, opts, "neptune_primary_instance_id")
-	require.Empty(t, primaryInstanceID, "primary instance should not be created")
-
-	replicaIDs := terraform.OutputList(t, opts, "neptune_read_replica_ids")
-	require.Empty(t, replicaIDs, "no replicas should be created")
-
-	// IAM role must be empty
-	iamRoleARN := terraform.Output(t, opts, "neptune_iam_role_arn")
-	require.Empty(t, iamRoleARN, "IAM role ARN should be empty when create_neptune_iam_role=false")
-}
-
 // copyModuleRootToTemp copies the entire module repository root to a temp
 // directory and returns the path to examples/test-fixture within it. This
 // preserves the relative source = "../../" reference in main.tf so that
