@@ -7,3 +7,4 @@ config:
   no-duplicate-heading: false # MD024
   line-length: false # MD013
   no-inline-html: false # MD033
+  table-column-style: false # MD060 - terraform-docs generates unaligned tables

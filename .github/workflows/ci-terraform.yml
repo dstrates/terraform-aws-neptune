@@ -53,7 +53,7 @@ jobs:
         with:
           working-dir: .
           output-file: README.md
-          output-method: print
+          output-method: inject
           fail-on-diff: true
 
       - name: Terraform Unit Tests
