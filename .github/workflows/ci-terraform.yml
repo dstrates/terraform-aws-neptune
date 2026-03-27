@@ -55,6 +55,7 @@ jobs:
           output-file: README.md
           output-method: inject
           fail-on-diff: true
+          args: --lockfile=false
 
       - name: Terraform Unit Tests
         working-directory: test
