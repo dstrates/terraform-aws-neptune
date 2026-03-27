@@ -102,3 +102,13 @@ output "neptune_primary_instance_publicly_accessible" {
   description = "Whether the primary Neptune cluster instance is publicly accessible"
   value       = try(aws_neptune_cluster_instance.primary[0].publicly_accessible, false)
 }
+
+output "neptune_primary_instance_availability_zone" {
+  description = "Availability zone of the primary Neptune instance"
+  value       = try(aws_neptune_cluster_instance.primary[0].availability_zone, null)
+}
+
+output "neptune_read_replica_availability_zones" {
+  description = "Availability zones of the Neptune read replica instances"
+  value       = try(aws_neptune_cluster_instance.read_replicas[*].availability_zone, [])
+}

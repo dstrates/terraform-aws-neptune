@@ -38,6 +38,9 @@ module "neptune" {
 
   create_neptune_subnet_group = var.create_neptune_subnet_group
 
+  security_group_ingress_rules    = var.security_group_ingress_rules
+  primary_instance_promotion_tier = var.primary_instance_promotion_tier
+
   storage_encrypted = var.storage_encrypted
   storage_type      = var.storage_type
 

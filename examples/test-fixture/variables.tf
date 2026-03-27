@@ -157,3 +157,24 @@ variable "create_neptune_subnet_group" {
   type    = bool
   default = true
 }
+
+variable "security_group_ingress_rules" {
+  description = "List of ingress rules for the Neptune security group."
+  type = list(object({
+    description      = string
+    from_port        = number
+    to_port          = number
+    protocol         = string
+    cidr_blocks      = optional(list(string), null)
+    security_groups  = optional(list(string), null)
+    prefix_list_ids  = optional(list(string), null)
+    ipv6_cidr_blocks = optional(list(string), null)
+  }))
+  default = null
+}
+
+variable "primary_instance_promotion_tier" {
+  description = "Failover priority for the primary instance (0-15)."
+  type        = number
+  default     = 0
+}

@@ -139,8 +139,8 @@ module "neptune" {
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.25 |
-| <a name="provider_random"></a> [random](#provider\_random) | >= 3.6.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.38.0 |
+| <a name="provider_random"></a> [random](#provider\_random) | 3.8.1 |
 
 ## Modules
 
@@ -207,8 +207,11 @@ No modules.
 | <a name="input_iam_role_policies"></a> [iam\_role\_policies](#input\_iam\_role\_policies) | (Optional) List of IAM policy ARNs to attach to the Neptune IAM role. Example: ["arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"] for bulk load. | `list(string)` | `[]` | no |
 | <a name="input_iam_roles"></a> [iam\_roles](#input\_iam\_roles) | (Optional) A List of ARNs for the IAM roles to associate to the Neptune Cluster | `list(string)` | `null` | no |
 | <a name="input_ingress_security_group_ids"></a> [ingress\_security\_group\_ids](#input\_ingress\_security\_group\_ids) | (Optional) List of security group IDs allowed inbound access to Neptune. Used in addition to cidr\_blocks on the managed security group. | `list(string)` | `[]` | no |
+| <a name="input_instance_apply_immediately"></a> [instance\_apply\_immediately](#input\_instance\_apply\_immediately) | (Optional) Specifies whether instance modifications are applied immediately. Default is false. | `bool` | `null` | no |
+| <a name="input_instance_auto_minor_version_upgrade"></a> [instance\_auto\_minor\_version\_upgrade](#input\_instance\_auto\_minor\_version\_upgrade) | (Optional) Indicates minor engine upgrades will be applied automatically. Default is true. | `bool` | `null` | no |
 | <a name="input_instance_class"></a> [instance\_class](#input\_instance\_class) | The instance class to use for the Neptune instances (e.g., db.r5.large, db.serverless). | `string` | `"db.serverless"` | no |
 | <a name="input_instance_identifier"></a> [instance\_identifier](#input\_instance\_identifier) | (Optional) The identifier for the primary Neptune cluster instance. If omitted, Terraform will assign a random, unique identifier. | `string` | `null` | no |
+| <a name="input_instance_preferred_maintenance_window"></a> [instance\_preferred\_maintenance\_window](#input\_instance\_preferred\_maintenance\_window) | (Optional) Weekly maintenance window for instances in UTC (e.g., 'wed:04:00-wed:04:30'). | `string` | `null` | no |
 | <a name="input_kms_key_arn"></a> [kms\_key\_arn](#input\_kms\_key\_arn) | (Optional) The ARN for the KMS encryption key. When specifying kms\_key\_arn, storage\_encrypted needs to be set to true. | `string` | `null` | no |
 | <a name="input_max_capacity"></a> [max\_capacity](#input\_max\_capacity) | The maximum Neptune Capacity Units (NCUs) for the cluster | `number` | `128` | no |
 | <a name="input_min_capacity"></a> [min\_capacity](#input\_min\_capacity) | The minimum Neptune Capacity Units (NCUs) for the cluster | `number` | `2.5` | no |
@@ -230,12 +233,16 @@ No modules.
 | <a name="input_port"></a> [port](#input\_port) | (Optional) The port on which the Neptune accepts connections. | `number` | `8182` | no |
 | <a name="input_preferred_backup_window"></a> [preferred\_backup\_window](#input\_preferred\_backup\_window) | The daily time range during which automated backups are created | `string` | `"07:00-09:00"` | no |
 | <a name="input_preferred_maintenance_window"></a> [preferred\_maintenance\_window](#input\_preferred\_maintenance\_window) | (Optional) The weekly time range during which system maintenance can occur, in UTC, e.g., 'wed:04:00-wed:04:30'. | `string` | `null` | no |
+| <a name="input_primary_instance_availability_zone"></a> [primary\_instance\_availability\_zone](#input\_primary\_instance\_availability\_zone) | (Optional) The EC2 Availability Zone for the primary Neptune instance. | `string` | `null` | no |
+| <a name="input_primary_instance_promotion_tier"></a> [primary\_instance\_promotion\_tier](#input\_primary\_instance\_promotion\_tier) | (Optional) Failover priority for the primary instance (0-15). Default is 0. | `number` | `0` | no |
 | <a name="input_public_cidr_blocks"></a> [public\_cidr\_blocks](#input\_public\_cidr\_blocks) | (Optional) List of public CIDR blocks allowed inbound/outbound Neptune traffic when publicly\_accessible = true. Only used when create\_neptune\_security\_group = true. | `list(string)` | `[]` | no |
 | <a name="input_publicly_accessible"></a> [publicly\_accessible](#input\_publicly\_accessible) | (Optional) Bool to control if Neptune cluster instances are publicly accessible. Requires instances to be in a public subnet with an internet gateway. | `bool` | `false` | no |
+| <a name="input_read_replica_configs"></a> [read\_replica\_configs](#input\_read\_replica\_configs) | Per-replica configuration overrides. List index corresponds to replica index. | <pre>list(object({<br/>    availability_zone            = optional(string, null)<br/>    promotion_tier               = optional(number, null)<br/>    preferred_maintenance_window = optional(string, null)<br/>    apply_immediately            = optional(bool, null)<br/>    auto_minor_version_upgrade   = optional(bool, null)<br/>  }))</pre> | `[]` | no |
 | <a name="input_read_replica_count"></a> [read\_replica\_count](#input\_read\_replica\_count) | Number of read replicas to create. | `number` | `0` | no |
 | <a name="input_replica_identifier_prefix"></a> [replica\_identifier\_prefix](#input\_replica\_identifier\_prefix) | (Optional) A prefix for read replica identifiers. Replicas will be named '<prefix>-0', '<prefix>-1', etc. If omitted, Terraform will assign random, unique identifiers. | `string` | `null` | no |
 | <a name="input_replication_source_identifier"></a> [replication\_source\_identifier](#input\_replication\_source\_identifier) | (Optional) ARN of a source Neptune cluster or Neptune instance if this Neptune cluster is to be created as a Read Replica. | `string` | `null` | no |
 | <a name="input_security_group_egress_rules"></a> [security\_group\_egress\_rules](#input\_security\_group\_egress\_rules) | List of egress rules for the Neptune security group. Defaults to allowing HTTPS (443) outbound to 0.0.0.0/0. | <pre>list(object({<br/>    description      = string<br/>    from_port        = number<br/>    to_port          = number<br/>    protocol         = string<br/>    cidr_blocks      = optional(list(string), null)<br/>    security_groups  = optional(list(string), null)<br/>    prefix_list_ids  = optional(list(string), null)<br/>    ipv6_cidr_blocks = optional(list(string), null)<br/>  }))</pre> | <pre>[<br/>  {<br/>    "cidr_blocks": [<br/>      "0.0.0.0/0"<br/>    ],<br/>    "description": "HTTPS outbound for AWS service connectivity",<br/>    "from_port": 443,<br/>    "protocol": "tcp",<br/>    "security_groups": null,<br/>    "to_port": 443<br/>  }<br/>]</pre> | no |
+| <a name="input_security_group_ingress_rules"></a> [security\_group\_ingress\_rules](#input\_security\_group\_ingress\_rules) | List of ingress rules for the Neptune security group. When null (default), uses legacy behavior with neptune\_subnet\_cidrs and ingress\_security\_group\_ids. Set to a list for full control over ingress rules. | <pre>list(object({<br/>    description      = string<br/>    from_port        = number<br/>    to_port          = number<br/>    protocol         = string<br/>    cidr_blocks      = optional(list(string), null)<br/>    security_groups  = optional(list(string), null)<br/>    prefix_list_ids  = optional(list(string), null)<br/>    ipv6_cidr_blocks = optional(list(string), null)<br/>  }))</pre> | `null` | no |
 | <a name="input_skip_final_snapshot"></a> [skip\_final\_snapshot](#input\_skip\_final\_snapshot) | Determines whether a final Neptune snapshot is created before deletion | `bool` | `false` | no |
 | <a name="input_snapshot_identifier"></a> [snapshot\_identifier](#input\_snapshot\_identifier) | (Optional) Specifies whether or not to create this cluster from a snapshot. | `string` | `null` | no |
 | <a name="input_storage_encrypted"></a> [storage\_encrypted](#input\_storage\_encrypted) | (Optional) Specifies whether the Neptune cluster is encrypted. | `bool` | `true` | no |
@@ -266,8 +273,10 @@ No modules.
 | <a name="output_neptune_global_cluster_resource_id"></a> [neptune\_global\_cluster\_resource\_id](#output\_neptune\_global\_cluster\_resource\_id) | AWS Region-unique, immutable identifier for the global database cluster |
 | <a name="output_neptune_iam_role_arn"></a> [neptune\_iam\_role\_arn](#output\_neptune\_iam\_role\_arn) | ARN of the IAM role for Neptune |
 | <a name="output_neptune_parameter_group_id"></a> [neptune\_parameter\_group\_id](#output\_neptune\_parameter\_group\_id) | ID of the Neptune cluster parameter group |
+| <a name="output_neptune_primary_instance_availability_zone"></a> [neptune\_primary\_instance\_availability\_zone](#output\_neptune\_primary\_instance\_availability\_zone) | Availability zone of the primary Neptune instance |
 | <a name="output_neptune_primary_instance_id"></a> [neptune\_primary\_instance\_id](#output\_neptune\_primary\_instance\_id) | ID of the primary Neptune cluster instance |
 | <a name="output_neptune_primary_instance_publicly_accessible"></a> [neptune\_primary\_instance\_publicly\_accessible](#output\_neptune\_primary\_instance\_publicly\_accessible) | Whether the primary Neptune cluster instance is publicly accessible |
+| <a name="output_neptune_read_replica_availability_zones"></a> [neptune\_read\_replica\_availability\_zones](#output\_neptune\_read\_replica\_availability\_zones) | Availability zones of the Neptune read replica instances |
 | <a name="output_neptune_read_replica_ids"></a> [neptune\_read\_replica\_ids](#output\_neptune\_read\_replica\_ids) | IDs of the Neptune read replica instances |
 | <a name="output_neptune_security_group_id"></a> [neptune\_security\_group\_id](#output\_neptune\_security\_group\_id) | ID of the Neptune security group |
 | <a name="output_neptune_subnet_group_id"></a> [neptune\_subnet\_group\_id](#output\_neptune\_subnet\_group\_id) | ID of the Neptune subnet group |

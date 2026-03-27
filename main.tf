@@ -94,6 +94,12 @@ resource "aws_neptune_cluster_instance" "primary" {
   neptune_subnet_group_name    = coalesce(try(aws_neptune_subnet_group.this[0].name, null), var.neptune_subnet_group_name)
   publicly_accessible          = var.publicly_accessible
 
+  apply_immediately            = var.instance_apply_immediately
+  auto_minor_version_upgrade   = var.instance_auto_minor_version_upgrade
+  availability_zone            = var.primary_instance_availability_zone
+  promotion_tier               = var.primary_instance_promotion_tier
+  preferred_maintenance_window = var.instance_preferred_maintenance_window
+
   tags = merge(var.tags, var.neptune_cluster_instance_tags)
 
   lifecycle {
@@ -121,6 +127,27 @@ resource "aws_neptune_cluster_instance" "read_replicas" {
   neptune_parameter_group_name = try(aws_neptune_parameter_group.this[0].name, null)
   neptune_subnet_group_name    = coalesce(try(aws_neptune_subnet_group.this[0].name, null), var.neptune_subnet_group_name)
   publicly_accessible          = var.publicly_accessible
+
+  apply_immediately = try(
+    var.read_replica_configs[count.index].apply_immediately,
+    var.instance_apply_immediately
+  )
+  auto_minor_version_upgrade = try(
+    var.read_replica_configs[count.index].auto_minor_version_upgrade,
+    var.instance_auto_minor_version_upgrade
+  )
+  availability_zone = try(
+    var.read_replica_configs[count.index].availability_zone,
+    null
+  )
+  promotion_tier = try(
+    var.read_replica_configs[count.index].promotion_tier,
+    1 + count.index
+  )
+  preferred_maintenance_window = try(
+    var.read_replica_configs[count.index].preferred_maintenance_window,
+    var.instance_preferred_maintenance_window
+  )
 
   tags = merge(var.tags, var.neptune_cluster_instance_tags)
 
@@ -220,6 +247,19 @@ locals {
   }
   name_prefix   = coalesce(var.cluster_identifier, var.cluster_identifier_prefix, "neptune")
   ingress_cidrs = var.publicly_accessible ? concat(var.neptune_subnet_cidrs, var.public_cidr_blocks) : var.neptune_subnet_cidrs
+
+  effective_ingress_rules = var.security_group_ingress_rules != null ? var.security_group_ingress_rules : [
+    {
+      description      = "Inbound Neptune Traffic"
+      from_port        = var.port
+      to_port          = var.port
+      protocol         = "tcp"
+      cidr_blocks      = length(local.ingress_cidrs) > 0 ? local.ingress_cidrs : null
+      security_groups  = length(var.ingress_security_group_ids) > 0 ? var.ingress_security_group_ids : null
+      prefix_list_ids  = null
+      ipv6_cidr_blocks = null
+    }
+  ]
 }
 
 data "aws_subnets" "filtered" {
@@ -311,13 +351,18 @@ resource "aws_security_group" "this" {
   description = "Neptune security group"
   vpc_id      = var.vpc_id
 
-  ingress {
-    description     = "Inbound Neptune Traffic"
-    from_port       = var.port
-    to_port         = var.port
-    protocol        = "tcp"
-    cidr_blocks     = length(local.ingress_cidrs) > 0 ? local.ingress_cidrs : null
-    security_groups = length(var.ingress_security_group_ids) > 0 ? var.ingress_security_group_ids : null
+  dynamic "ingress" {
+    for_each = local.effective_ingress_rules
+    content {
+      description      = ingress.value.description
+      from_port        = ingress.value.from_port
+      to_port          = ingress.value.to_port
+      protocol         = ingress.value.protocol
+      cidr_blocks      = ingress.value.cidr_blocks
+      security_groups  = ingress.value.security_groups
+      prefix_list_ids  = ingress.value.prefix_list_ids
+      ipv6_cidr_blocks = ingress.value.ipv6_cidr_blocks
+    }
   }
 
   dynamic "egress" {
@@ -338,8 +383,12 @@ resource "aws_security_group" "this" {
 
   lifecycle {
     precondition {
-      condition     = length(var.neptune_subnet_cidrs) > 0 || length(var.ingress_security_group_ids) > 0
-      error_message = "You must provide at least one of neptune_subnet_cidrs or ingress_security_group_ids to define ingress rules."
+      condition = (
+        var.security_group_ingress_rules != null ||
+        length(var.neptune_subnet_cidrs) > 0 ||
+        length(var.ingress_security_group_ids) > 0
+      )
+      error_message = "You must provide at least one of security_group_ingress_rules, neptune_subnet_cidrs, or ingress_security_group_ids."
     }
   }
 }

@@ -278,3 +278,116 @@ func TestNeptuneValidation_PublicWithoutSubnet(t *testing.T) {
 	require.Error(t, err, "plan should fail when publicly_accessible=false without subnet group")
 	require.Contains(t, err.Error(), "neptune_subnet_group_name", "error should reference subnet group requirement")
 }
+
+// TestNeptuneValidation_CustomIngressRules validates that security_group_ingress_rules
+// can be used as the sole source of ingress configuration, without neptune_subnet_cidrs
+// or ingress_security_group_ids.
+//
+// No AWS resources are created — this is a plan-only validation test. Run with:
+// go test -v -run TestNeptuneValidation_CustomIngressRules -timeout 5m
+func TestNeptuneValidation_CustomIngressRules(t *testing.T) {
+	t.Parallel()
+	fixtureDir := copyModuleRootToTemp(t)
+	suffix := strings.ToLower(random.UniqueId())
+
+	opts := &terraform.Options{
+		TerraformDir: fixtureDir,
+		Vars: map[string]interface{}{
+			"suffix":                          suffix,
+			"aws_region":                      "us-east-1",
+			"aws_skip_credentials_validation": true,
+			"subnet_ids":                      []string{"subnet-00000000"},
+			"neptune_subnet_cidrs":            []string{}, // empty — would fail without custom ingress rules
+			"engine_version":                  "1.4.7.0",
+			"enable_serverless":               true,
+			"instance_class":                  "db.serverless",
+			"create_neptune_instance":         true,
+			"neptune_family":                  "neptune1.4",
+			"storage_encrypted":               true,
+			"backup_retention_period":         1,
+			"security_group_ingress_rules": []map[string]interface{}{
+				{
+					"description": "Custom ingress rule",
+					"from_port":   8182,
+					"to_port":     8182,
+					"protocol":    "tcp",
+					"cidr_blocks": []string{"10.0.0.0/8"},
+				},
+			},
+		},
+	}
+
+	// Plan should succeed because security_group_ingress_rules satisfies the precondition
+	_, err := terraform.InitAndPlanE(t, opts)
+	require.NoError(t, err, "plan should succeed with security_group_ingress_rules as sole ingress source")
+}
+
+// TestNeptuneValidation_MissingAllIngressConfig validates that the precondition
+// fails when security_group_ingress_rules, neptune_subnet_cidrs, AND
+// ingress_security_group_ids are all empty or null.
+//
+// No AWS resources are created — this is a plan-only validation test. Run with:
+// go test -v -run TestNeptuneValidation_MissingAllIngressConfig -timeout 5m
+func TestNeptuneValidation_MissingAllIngressConfig(t *testing.T) {
+	t.Parallel()
+	fixtureDir := copyModuleRootToTemp(t)
+	suffix := strings.ToLower(random.UniqueId())
+
+	opts := &terraform.Options{
+		TerraformDir: fixtureDir,
+		Vars: map[string]interface{}{
+			"suffix":                          suffix,
+			"aws_region":                      "us-east-1",
+			"aws_skip_credentials_validation": true,
+			"subnet_ids":                      []string{"subnet-00000000"},
+			"neptune_subnet_cidrs":            []string{}, // empty
+			"engine_version":                  "1.4.7.0",
+			"enable_serverless":               true,
+			"instance_class":                  "db.serverless",
+			"create_neptune_instance":         true,
+			"neptune_family":                  "neptune1.4",
+			"storage_encrypted":               true,
+			"backup_retention_period":         1,
+			// security_group_ingress_rules defaults to null
+			// ingress_security_group_ids not passed (defaults to empty)
+		},
+	}
+
+	_, err := terraform.InitAndPlanE(t, opts)
+	require.Error(t, err, "plan should fail when all ingress sources are empty")
+	require.Contains(t, err.Error(), "security_group_ingress_rules", "error should reference ingress configuration options")
+}
+
+// TestNeptuneValidation_InvalidPromotionTier validates that the promotion_tier
+// variable validation rejects values outside the 0-15 range.
+//
+// No AWS resources are created — this is a plan-only validation test. Run with:
+// go test -v -run TestNeptuneValidation_InvalidPromotionTier -timeout 5m
+func TestNeptuneValidation_InvalidPromotionTier(t *testing.T) {
+	t.Parallel()
+	fixtureDir := copyModuleRootToTemp(t)
+	suffix := strings.ToLower(random.UniqueId())
+
+	opts := &terraform.Options{
+		TerraformDir: fixtureDir,
+		Vars: map[string]interface{}{
+			"suffix":                          suffix,
+			"aws_region":                      "us-east-1",
+			"aws_skip_credentials_validation": true,
+			"subnet_ids":                      []string{"subnet-00000000"},
+			"neptune_subnet_cidrs":            []string{"10.0.0.0/8"},
+			"engine_version":                  "1.4.7.0",
+			"enable_serverless":               true,
+			"instance_class":                  "db.serverless",
+			"create_neptune_instance":         true,
+			"neptune_family":                  "neptune1.4",
+			"storage_encrypted":               true,
+			"backup_retention_period":         1,
+			"primary_instance_promotion_tier": 16, // invalid — must be 0-15
+		},
+	}
+
+	_, err := terraform.InitAndPlanE(t, opts)
+	require.Error(t, err, "plan should fail when promotion_tier is outside 0-15 range")
+	require.Contains(t, err.Error(), "promotion_tier", "error should reference promotion_tier validation")
+}

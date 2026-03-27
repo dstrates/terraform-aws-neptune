@@ -363,6 +363,21 @@ variable "security_group_egress_rules" {
   ]
 }
 
+variable "security_group_ingress_rules" {
+  description = "List of ingress rules for the Neptune security group. When null (default), uses legacy behavior with neptune_subnet_cidrs and ingress_security_group_ids. Set to a list for full control over ingress rules."
+  type = list(object({
+    description      = string
+    from_port        = number
+    to_port          = number
+    protocol         = string
+    cidr_blocks      = optional(list(string), null)
+    security_groups  = optional(list(string), null)
+    prefix_list_ids  = optional(list(string), null)
+    ipv6_cidr_blocks = optional(list(string), null)
+  }))
+  default = null
+}
+
 variable "neptune_security_group_tags" {
   description = "Tags for the Neptune security group"
   type        = map(string)
@@ -487,4 +502,59 @@ variable "public_cidr_blocks" {
   description = "(Optional) List of public CIDR blocks allowed inbound/outbound Neptune traffic when publicly_accessible = true. Only used when create_neptune_security_group = true."
   type        = list(string)
   default     = []
+}
+
+variable "instance_apply_immediately" {
+  description = "(Optional) Specifies whether instance modifications are applied immediately. Default is false."
+  type        = bool
+  default     = null
+}
+
+variable "instance_auto_minor_version_upgrade" {
+  description = "(Optional) Indicates minor engine upgrades will be applied automatically. Default is true."
+  type        = bool
+  default     = null
+}
+
+variable "instance_preferred_maintenance_window" {
+  description = "(Optional) Weekly maintenance window for instances in UTC (e.g., 'wed:04:00-wed:04:30')."
+  type        = string
+  default     = null
+}
+
+variable "primary_instance_availability_zone" {
+  description = "(Optional) The EC2 Availability Zone for the primary Neptune instance."
+  type        = string
+  default     = null
+}
+
+variable "primary_instance_promotion_tier" {
+  description = "(Optional) Failover priority for the primary instance (0-15). Default is 0."
+  type        = number
+  default     = 0
+
+  validation {
+    condition     = var.primary_instance_promotion_tier >= 0 && var.primary_instance_promotion_tier <= 15
+    error_message = "promotion_tier must be between 0 and 15."
+  }
+}
+
+variable "read_replica_configs" {
+  description = "Per-replica configuration overrides. List index corresponds to replica index."
+  type = list(object({
+    availability_zone            = optional(string, null)
+    promotion_tier               = optional(number, null)
+    preferred_maintenance_window = optional(string, null)
+    apply_immediately            = optional(bool, null)
+    auto_minor_version_upgrade   = optional(bool, null)
+  }))
+  default = []
+
+  validation {
+    condition = alltrue([
+      for config in var.read_replica_configs :
+      config.promotion_tier == null || (config.promotion_tier >= 0 && config.promotion_tier <= 15)
+    ])
+    error_message = "promotion_tier must be between 0 and 15."
+  }
 }
