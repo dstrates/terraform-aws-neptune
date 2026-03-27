@@ -342,12 +342,14 @@ variable "neptune_role_permissions_boundary" {
 variable "security_group_egress_rules" {
   description = "List of egress rules for the Neptune security group. Defaults to allowing HTTPS (443) outbound to 0.0.0.0/0."
   type = list(object({
-    description     = string
-    from_port       = number
-    to_port         = number
-    protocol        = string
-    cidr_blocks     = optional(list(string), null)
-    security_groups = optional(list(string), null)
+    description      = string
+    from_port        = number
+    to_port          = number
+    protocol         = string
+    cidr_blocks      = optional(list(string), null)
+    security_groups  = optional(list(string), null)
+    prefix_list_ids  = optional(list(string), null)
+    ipv6_cidr_blocks = optional(list(string), null)
   }))
   default = [
     {
