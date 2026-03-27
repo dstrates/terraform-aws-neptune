@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/dstrates/terraform-aws-neptune/compare/v0.4.0...v0.4.1) (2026-03-27)
+
+
+### Bug Fixes
+
+* add extra attributes support for SG rule ([#58](https://github.com/dstrates/terraform-aws-neptune/issues/58)) ([b768f10](https://github.com/dstrates/terraform-aws-neptune/commit/b768f10add93b19926718d31e26af9b2ae800a46))
+
 ## [0.4.0](https://github.com/dstrates/terraform-aws-neptune/compare/v0.3.1...v0.4.0) (2026-03-13)
 
 
