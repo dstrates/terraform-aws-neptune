@@ -266,8 +266,9 @@ variable "neptune_cluster_instance_tags" {
 variable "neptune_cluster_parameters" {
   description = "A map of Neptune cluster parameter settings"
   type = map(object({
-    key   = string
-    value = string
+    key          = string
+    value        = string
+    apply_method = optional(string)
   }))
   default = {
     parameter1 = {
@@ -286,8 +287,9 @@ variable "neptune_cluster_parameter_group_tags" {
 variable "neptune_db_parameters" {
   description = "A map of Neptune DB parameter settings"
   type = map(object({
-    key   = string
-    value = string
+    key          = string
+    value        = string
+    apply_method = optional(string)
   }))
   default = {
     parameter1 = {
