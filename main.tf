@@ -179,8 +179,9 @@ resource "aws_neptune_cluster_parameter_group" "this" {
   dynamic "parameter" {
     for_each = var.neptune_cluster_parameters
     content {
-      name  = parameter.value.key
-      value = parameter.value.value
+      name         = parameter.value.key
+      value        = parameter.value.value
+      apply_method = parameter.value.apply_method
     }
   }
 
@@ -197,8 +198,9 @@ resource "aws_neptune_parameter_group" "this" {
   dynamic "parameter" {
     for_each = var.neptune_db_parameters
     content {
-      name  = parameter.value.key
-      value = parameter.value.value
+      name         = parameter.value.key
+      value        = parameter.value.value
+      apply_method = parameter.value.apply_method
     }
   }
 
