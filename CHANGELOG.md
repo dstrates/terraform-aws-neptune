@@ -7,6 +7,11 @@
 
 * add extra attributes support for SG rule ([#58](https://github.com/dstrates/terraform-aws-neptune/issues/58)) ([b768f10](https://github.com/dstrates/terraform-aws-neptune/commit/b768f10add93b19926718d31e26af9b2ae800a46))
 
+
+### Notes
+
+* This release needs Terraform 1.3 or later because it uses `optional()` with a default value. `required_version` still said `>= 1.0`; this was corrected in [#64](https://github.com/dstrates/terraform-aws-neptune/pull/64).
+
 ## [0.4.0](https://github.com/dstrates/terraform-aws-neptune/compare/v0.3.1...v0.4.0) (2026-03-13)
 
 

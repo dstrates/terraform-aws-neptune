@@ -2,6 +2,7 @@ package test
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -277,4 +278,89 @@ func TestNeptuneValidation_PublicWithoutSubnet(t *testing.T) {
 	_, err := terraform.InitAndPlanE(t, opts)
 	require.Error(t, err, "plan should fail when publicly_accessible=false without subnet group")
 	require.Contains(t, err.Error(), "neptune_subnet_group_name", "error should reference subnet group requirement")
+}
+
+// TestNeptuneValidation_ParameterApplyMethod validates that apply_method is
+// passed through to both parameter groups, and that entries without it keep
+// the provider default of pending-reboot.
+//
+// No AWS resources are created — this is a plan-only validation test. Run with:
+// go test -v -run TestNeptuneValidation_ParameterApplyMethod -timeout 5m
+func TestNeptuneValidation_ParameterApplyMethod(t *testing.T) {
+	t.Parallel()
+	fixtureDir := copyModuleRootToTemp(t)
+
+	opts := &terraform.Options{
+		TerraformDir: fixtureDir,
+		PlanFilePath: filepath.Join(fixtureDir, "tfplan"),
+		Vars: map[string]interface{}{
+			"suffix":                          strings.ToLower(random.UniqueId()),
+			"aws_region":                      "us-east-1",
+			"aws_skip_credentials_validation": true,
+			"subnet_ids":                      []string{"subnet-00000000"},
+			"neptune_subnet_cidrs":            []string{"10.0.0.0/8"},
+			"create_neptune_instance":         false,
+			"neptune_cluster_parameters": map[string]interface{}{
+				"slow_query": map[string]interface{}{"key": "neptune_enable_slow_query_log", "value": "info", "apply_method": "immediate"},
+				"audit":      map[string]interface{}{"key": "neptune_enable_audit_log", "value": "1"},
+			},
+			"neptune_db_parameters": map[string]interface{}{
+				"timeout": map[string]interface{}{"key": "neptune_query_timeout", "value": "30000", "apply_method": "immediate"},
+				"cache":   map[string]interface{}{"key": "neptune_result_cache", "value": "0"},
+			},
+		},
+	}
+
+	plan := terraform.InitAndPlanAndShowWithStruct(t, opts)
+
+	for addr, want := range map[string]map[string]string{
+		"module.neptune.aws_neptune_cluster_parameter_group.this[0]": {
+			"neptune_enable_slow_query_log": "immediate",
+			"neptune_enable_audit_log":      "pending-reboot",
+		},
+		"module.neptune.aws_neptune_parameter_group.this[0]": {
+			"neptune_query_timeout": "immediate",
+			"neptune_result_cache":  "pending-reboot",
+		},
+	} {
+		rc, ok := plan.ResourceChangesMap[addr]
+		require.True(t, ok, "plan should contain %s", addr)
+		after := rc.Change.After.(map[string]interface{})
+
+		got := map[string]string{}
+		for _, p := range after["parameter"].([]interface{}) {
+			m := p.(map[string]interface{})
+			got[m["name"].(string)] = m["apply_method"].(string)
+		}
+		require.Equal(t, want, got, "apply_method per parameter in %s", addr)
+	}
+}
+
+// TestNeptuneValidation_InvalidApplyMethod validates that a plan is rejected
+// when apply_method is not "immediate" or "pending-reboot".
+//
+// No AWS resources are created — this is a plan-only validation test. Run with:
+// go test -v -run TestNeptuneValidation_InvalidApplyMethod -timeout 5m
+func TestNeptuneValidation_InvalidApplyMethod(t *testing.T) {
+	t.Parallel()
+	fixtureDir := copyModuleRootToTemp(t)
+
+	opts := &terraform.Options{
+		TerraformDir: fixtureDir,
+		Vars: map[string]interface{}{
+			"suffix":                          strings.ToLower(random.UniqueId()),
+			"aws_region":                      "us-east-1",
+			"aws_skip_credentials_validation": true,
+			"subnet_ids":                      []string{"subnet-00000000"},
+			"neptune_subnet_cidrs":            []string{"10.0.0.0/8"},
+			"create_neptune_instance":         false,
+			"neptune_db_parameters": map[string]interface{}{
+				"timeout": map[string]interface{}{"key": "neptune_query_timeout", "value": "30000", "apply_method": "now"},
+			},
+		},
+	}
+
+	_, err := terraform.InitAndPlanE(t, opts)
+	require.Error(t, err, "plan should fail for an unknown apply_method")
+	require.Contains(t, err.Error(), "apply_method must be", "error should come from the module validation")
 }

@@ -62,3 +62,28 @@ jobs:
         # No AWS deployment — these tests only run terraform plan against
         # the local fixture and assert that validation/preconditions fire.
         run: go test -v -run "TestNeptuneValidation" -timeout 10m
+
+  terraform-min-version:
+    name: Terraform minimum version
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
+    strategy:
+      matrix:
+        # Keep the first entry equal to required_version in versions.tf.
+        terraform_version: ["1.3.0"]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
+        with:
+          terraform_version: ${{ matrix.terraform_version }}
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate -no-color

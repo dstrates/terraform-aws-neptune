@@ -104,16 +104,18 @@ variable "neptune_family" {
 
 variable "neptune_cluster_parameters" {
   type = map(object({
-    key   = string
-    value = string
+    key          = string
+    value        = string
+    apply_method = optional(string)
   }))
   default = {}
 }
 
 variable "neptune_db_parameters" {
   type = map(object({
-    key   = string
-    value = string
+    key          = string
+    value        = string
+    apply_method = optional(string)
   }))
   default = {}
 }

@@ -276,6 +276,12 @@ variable "neptune_cluster_parameters" {
       value = "1"
     }
   }
+
+  validation {
+    # coalesce avoids passing null to contains(); || does not short-circuit before Terraform 1.12.
+    condition     = alltrue([for p in values(var.neptune_cluster_parameters) : contains(["immediate", "pending-reboot"], coalesce(p.apply_method, "pending-reboot"))])
+    error_message = "apply_method must be \"immediate\" or \"pending-reboot\"."
+  }
 }
 
 variable "neptune_cluster_parameter_group_tags" {
@@ -296,6 +302,12 @@ variable "neptune_db_parameters" {
       key   = "neptune_query_timeout"
       value = "25"
     }
+  }
+
+  validation {
+    # coalesce avoids passing null to contains(); || does not short-circuit before Terraform 1.12.
+    condition     = alltrue([for p in values(var.neptune_db_parameters) : contains(["immediate", "pending-reboot"], coalesce(p.apply_method, "pending-reboot"))])
+    error_message = "apply_method must be \"immediate\" or \"pending-reboot\"."
   }
 }
 
